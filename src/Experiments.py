@@ -30,8 +30,9 @@ class Experiment(object):
 		h_ratio -- n_hidden_neurons / n_output_neurons ratio
 		lrn_rate -- learning rate for the network
 		momentum -- momentum parameter for the network
-		l_size, p_size, e_size -- modlity sizes for label, physical, exploration
-		p_ratio, e_ratio -- overlap ratios for physical and exploration values
+		l_size, t_size, b_size, h_size -- modality sizes for different features
+			In order, modality sizes for label, tail, body, head.
+		p_ratio -- overlap ratio for physical values
 		p_proto -- physical values for prototypes
 		l_stims -- label values for stimuli
 		test_stims -- full stimuli (label+physical+exploration) for test trials
@@ -68,9 +69,9 @@ class Experiment(object):
 		self.n_subjects = n_subjects
 		self.start_subject = start_subject
 		# Generate physical values for stimuli
-		# ========== TODO ==========
-		#self.p_proto = self.generate_stims(self.p_size, self.p_ratio)
-		# ==========================
+		t_proto = self.generate_stims(self.t_size, self.p_ratio)
+		h_proto = self.generate_stims(self.h_size, self.p_ratio)
+		self.p_proto = (t_proto, np.ones((1, self.b_size)), h_proto)
 		# Generate (no_label, label) part to add to one or the other stimulus
 		label = np.ones((1, self.l_size))
 		no_label = np.zeros((1, self.l_size))
