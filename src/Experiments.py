@@ -6,21 +6,22 @@ from multiprocessing import Pool
 from Subjects import *
 
 class Experiment(object):
-	"""Global class for labeltime experiments.
+	"""Global class for salience-diagnosticity experiments.
 	
 	Input parameters:
-		modality_sizes_stim -- tuple of 3 values for stimulus modality sizes
-			Values are given in this order: label_size, physical_size,
-			exploration_size. They encode the number of units on which
-			to encode each dimension of the stimuli.
-		overlap_ratios -- tuple of two overlap ratio values in [0, 1]
-			The first value is the overlap ratio for physical values of
-			the stimuli. The second value is the overlap ratio in the
-			exploration of the stimuli (passed on to each subject).
+		modality_sizes -- tuple of 4 values for stimulus modality sizes
+			Values are given in this order: label_size, tail_size,
+			body_size, head_size. They encode the number of units on
+			which to encode each dimension of the stimuli.
+		overlap_ratio -- overlap ratio value for head and tail in [0, 1]
 		n_subjects -- number of subjects to run in total per theory (LaF, CR)
 			Is expected to be a multiple of 8, for counterbalancing purposes.
 		start_subject -- the subject number for the first subject
 			Used if the experiment is ran in multiple bashes.
+		pres_time -- maximum number of presentation for each trial
+		threshold -- error threshold for model "looking away"
+		n_blocks -- number of test blocks
+		h_ratio -- ratios from output to hidden layer for networks
 	
 	SingleObjectExperiment properties:
 		pres_time -- max number of presentations at familiarisation
@@ -42,8 +43,8 @@ class Experiment(object):
 	
 	"""
 	
-	def __init__(self, modality_sizes_stim, overlap_ratios, n_subjects,
-				 start_subject, pres_time, threshold, n_trials, h_ratio):
+	def __init__(self, modality_sizes, overlap_ratio, n_subjects,
+				 start_subject, pres_time, threshold, n_blocks, h_ratio):
 		"""Initialise a labeltime experiment.
 		
 		See class documentation for more details about parameters.
@@ -51,7 +52,7 @@ class Experiment(object):
 		"""
 		self.pres_time = pres_time
 		self.threshold = threshold
-		self.n_trials = n_trials
+		self.n_blocks = n_blocks
 		self.h_ratio = h_ratio
 		# Theory list
 		self.theories = ["LaF", "CR"]
@@ -62,26 +63,30 @@ class Experiment(object):
 		# l_ -> label_
 		# p_ -> physical
 		# e_ -> exploration
-		(self.l_size, self.p_size, self.e_size) = modality_sizes_stim
-		(self.p_ratio, self.e_ratio) = overlap_ratios
+		(self.l_size, self.t_size, self.b_size, self.h_size) = modality_sizes
+		self.p_ratio = overlap_ratio
 		self.n_subjects = n_subjects
 		self.start_subject = start_subject
 		# Generate physical values for stimuli
-		self.p_proto = self.generate_stims(self.p_size, self.p_ratio)
+		# ========== TODO ==========
+		#self.p_proto = self.generate_stims(self.p_size, self.p_ratio)
+		# ==========================
 		# Generate (no_label, label) part to add to one or the other stimulus
 		label = np.ones((1, self.l_size))
 		no_label = np.zeros((1, self.l_size))
 		self.l_stims = (no_label, label) # index on l_stims is presence of label
 		# Generate test stimuli with zeros for label and exploration
-		self.test_stims = (np.hstack((np.zeros((1, self.l_size)),
-									  self.p_proto[0],
-									  np.zeros((1, self.e_size))
-									  )),
-						   np.hstack((np.zeros((1, self.l_size)),
-									  self.p_proto[1],
-									  np.zeros((1, self.e_size))
-									  ))
-						   )
+		# ========== TODO ==========
+		#self.test_stims = (np.hstack((np.zeros((1, self.l_size)),
+		#							  self.p_proto[0],
+		#							  np.zeros((1, self.e_size))
+		#							  )),
+		#				   np.hstack((np.zeros((1, self.l_size)),
+		#							  self.p_proto[1],
+		#							  np.zeros((1, self.e_size))
+		#							  ))
+		#				   )
+		# ==========================
 	
 	def generate_stims(self, size, ratio):
 		"""Generate two stims of given size with given overlap ratio."""
