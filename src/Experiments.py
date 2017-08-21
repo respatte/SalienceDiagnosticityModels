@@ -68,10 +68,18 @@ class Experiment(object):
 		self.p_ratio = overlap_ratio
 		self.n_subjects = n_subjects
 		self.start_subject = start_subject
-		# Generate physical values for stimuli
-		t_proto = self.generate_stims(self.t_size, self.p_ratio)
-		h_proto = self.generate_stims(self.h_size, self.p_ratio)
-		self.p_proto = (t_proto, np.ones((1, self.b_size)), h_proto)
+		# Generate physical values for stimuli prototypes
+		self.t_proto = self.generate_stims(self.t_size, self.p_ratio)
+		self.h_proto = self.generate_stims(self.h_size, self.p_ratio)
+		self.b_proto = np.ones((1, self.b_size))
+		# Generate physical values for stimuli (full categories)
+		self.t_cat = (self.generate_category(self.t_proto[0], 8, "continuous"),
+					  self.generate_category(self.t_proto[1], 8, "continuous"))
+		self.h_cat = (self.generate_category(self.h_proto[0], 8, "continuous"),
+					  self.generate_category(self.h_proto[1], 8, "continuous"))
+		# Bodies far more similar to each other than tails or heads
+		self.b_cat = self.generate_category(self.b_proto, 16, "continuous",
+											.1, 0.1)
 		# Generate (no_label, label) part to add to one or the other stimulus
 		label = np.ones((1, self.l_size))
 		no_label = np.zeros((1, self.l_size))
@@ -112,6 +120,28 @@ class Experiment(object):
 		stim1[0, i_stim1] = 0
 		stim2[0, i_stim2] = 0
 		return (stim1,stim2)
+	
+	def generate_category(self, prototype, n_exemplars, cat_method,
+						  noise=.5, min_dist=1):
+		"""Generate a category around a prototype."""
+		n = 0
+		steps = 0
+		exemplars = [prototype] # Initialise exemplars list with prototype
+		while n < n_exemplars and steps < 100000:
+			steps += 1
+			if cat_method == "continuous":
+				new_exemplar = prototype + np.random.uniform(-noise, noise,
+															 prototype.shape)
+			for exemplar in exemplars:
+				if np.linalg.norm(exemplar - new_exemplar) < min_dist:
+					new_exemplar = None
+					break
+			if new_exemplar is not None:
+				exemplars.append(new_exemplar)
+				n += 1
+		if steps == 100000:
+			raise(NotImplementedError)
+		return exemplars[1:] # Return all exemplars but first (prototype)
 	
 	def run_subject(self, subject_i, method):
 		"""Run familiarisation for a single subject."""
@@ -303,81 +333,6 @@ class Experiment(object):
 			f.write(data_LTM + "\n")
 		with open(filename+"_hidden_STM.csv", 'w') as f:
 			f.write(data_STM + "\n")
-	
-class SingleObjectExperiment(Experiment):
-	"""Class computing a full labeltime experiment with single objects.
-	
-	Input parameters:
-		modality_sizes_stim -- tuple of 3 values for stimulus modality sizes
-			Values are given in this order: label_size, physical_size,
-			exploration_size. They encode the number of units on which
-			to encode each dimension of the stimuli.
-		overlap_ratios -- tuple of two overlap ratio values in [0, 1]
-			The first value is the overlap ratio for physical values of
-			the stimuli. The second value is the overlap ratio in the
-			exploration of the stimuli (passed on to each subject).
-		n_subjects -- number of subjects to run in total per model (LaF, CR)
-			Is expected to be a multiple of 16, for counterbalancing purposes.
-		start_subject -- the subject number for the first subject
-			Used if the experiment is ran in multiple bashes.
-	
-	SingleObjectExperiment properties:
-		mu_t, sigma_t -- total background training time distribution
-		mu_p, sigma_p -- background play session time distribution
-		pres_time -- max number of presentations at familiarisation
-		threshold -- "looking away" threshold at familiarisation
-		n_trials -- number of familiarisation trials
-		h_ratio -- n_hidden_neurons / n_output_neurons ratio
-		lrn_rate -- learning rate for the network
-		momentum -- momentum parameter for the network
-		l_size, p_size, e_size -- modlity sizes for label, physical, exploration
-		p_ratio, e_ratio -- overlap ratios for physical and exploration values
-		p_stims -- physical values for stimuli
-		l_stims -- label values for stimuli
-		test_stims -- full stimuli (label+physical+exploration) for test trials
-	
-	SingleObjectExperiment methods:
-		run_experiment -- run a ful experiment, using only class properties
-		generate_stims -- generate physical stimuli with overlap
-		create_subject_stims -- create stimuli for background training
-		output_data -- convert results data to a csv file
-	
-	"""
-	
-	def __init__(self, modality_sizes_stim, overlap_ratios, n_subjects,
-				 start_subject, theta_t=(500, 50), pres_time=10, pps=4,
-				 threshold=1e-3, n_trials=8, h_ratio=19/24):
-		"""Initialise a single-object labeltime experiment.
-		
-		See class documentation for more details about parameters.
-		
-		"""
-		Experiment.__init__(self, modality_sizes_stim, overlap_ratios,
-							n_subjects, start_subject, pres_time*pps, threshold,
-							n_trials, h_ratio)
-		mu_t, sigma_t = theta_t[0]*pps, theta_t[1]*pps
-		self.bg_parameters = mu_t, sigma_t
-		self.p_stims = self.p_proto
-		del self.p_proto
-	
-	def create_subject_stims(self, s_type):
-		"""Create stimuli for the subject depending on subject number."""
-		# Add label to one stimulus, keep labelled first in couple
-		labelled_i = int(s_type[0])
-		label_stim = np.hstack((self.l_stims[1],
-								self.p_stims[labelled_i]))
-		no_label_stim = np.hstack((self.l_stims[0],
-								   self.p_stims[1-labelled_i]))
-		return (label_stim, no_label_stim)
-	
-	def create_subject(self, bg_stims, s_type):
-		"""Create subject for experiment depending on subject number."""
-		theory = int(s_type[2])
-		s = SingleObjectSubject(bg_stims, (self.e_size, self.e_ratio),
-								self.theories[theory], self.l_size,
-								self.h_ratio,
-								self.lrn_rates, self.momenta)
-		return s
 
 class CategoryExperiment(Experiment):
 	"""Class computing a full labeltime experiment with categories.
@@ -470,24 +425,3 @@ class CategoryExperiment(Experiment):
 							self.l_size, self.h_ratio, self.lrn_rates,
 							self.momenta)
 		return s
-	
-	def generate_category(self, prototype, n_exemplars, cat_method):
-		"""Generate a category around a prototype."""
-		n = 0
-		steps = 0
-		exemplars = [prototype] # Initialise exemplars list with prototype
-		while n < n_exemplars and steps < 100000:
-			steps += 1
-			if cat_method == "continuous":
-				new_exemplar = prototype + np.random.uniform(-.5, .5,
-															 prototype.shape)
-			for exemplar in exemplars:
-				if np.linalg.norm(exemplar - new_exemplar) < 1:
-					new_exemplar = None
-					break
-			if new_exemplar is not None:
-				exemplars.append(new_exemplar)
-				n += 1
-		if steps == 100000:
-			raise(NotImplementedError)
-		return exemplars[1:] # Return all exemplars but first (prototype)
