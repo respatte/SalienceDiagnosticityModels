@@ -9,7 +9,9 @@ def main():
     head_cat = ["1", "2"]
     # t/csv file headers
     header_cb = ["Participant"] + ["Fam"+str(i) for i in range(12)] + ["Ctr"+str(i) for i in range(3)] + ["WL"+str(i) for i in range(2)]
-    header_pi = ["Participant", "First fam stim", "Name first fam stim", "First contrast", "Side new HC", "Side new TC", "Side new tail RC"]
+    header_pi = ["Participant", "First fam stim", "Name first fam stim",
+                 "First contrast", "Side new HC", "Side new TC", "Side new tail RC",
+                 "First label WL", "Side A1", "Side A2"]
     rows_cb = [header_cb]
     rows_pi = [header_pi]
     # Label condition (twice NoLabel to get even numbers
@@ -63,10 +65,6 @@ def main():
     Oh_HC_sides = ["L","R"]
     Ot_TC_sides = ["L","R"]
     Ot_RC_sides = ["L","R"]
-    # Word-learning tests
-    labels = ["Gatoo","Saldie"]
-    A1_sides = ["L","R"]
-    A2_sides = ["L","R"]
     # Contrast tests counterbalancing
     p = 0
     while p < 48:
@@ -76,9 +74,9 @@ def main():
                     for Ot_RC_side in (0,1):
                         p += 1
                         Ot_HC = random.choice(tail_cat)
-                        Oh_HC_side = random.choice(Oh_HC_sides)
+                        Oh_HC_side = random.choice([0,1])
                         Oh_TC = random.choice(head_cat)
-                        Ot_TC_side = random.choice(Ot_TC_sides)
+                        Ot_TC_side = random.choice([0,1])
                         HC_TC = {"HC":"HC_"+tail_cat[Ot_HC]+head_cat[Oh_HC]+Oh_HC_sides[Oh_HC_side],
                                  "TC":"TC_"+tail_cat[Ot_TC]+head_cat[Oh_TC]+Ot_TC_sides[Ot_TC_side]
                                 }
@@ -86,13 +84,27 @@ def main():
                         rows_cb[p].append([HC_TC[cb_tests[first_test]], HC_TC[cb_tests[first_test-1]], RC])
                         rows_pi[p].append([cb_tests[first_test], Oh_HC_sides[Oh_HC_side-1],
                                            Ot_TC_sides[Ot_Tc_side-1], Ot_RC_sides[Ot_RC_side-1]]
+    
+    # Word-learning tests
+    labels = ["G","S"]
+    A1_sides = ["L","R"]
+    A2_sides = ["L","R"]
     # Word learning tests counterbalancing
     p = 0
     while p < 48:
-        # TODO
+        for first_label in (0,1):
+            for A1_side in (0,1):
+                for A2_side in (0,1):
+                    p += 1
+                    rows_cb[p].append(["WL"+labels[first_label]+"_A1"+A1_sides[A1_side]+"_B2"+A1_sides[A1_side-1],
+                                       "WL"+labels[first_label-1]+"_A2"+A2_sides[A2_side]+"_B1"+A2_sides[A2_side-1]])
+                    rows_pi[p].append([labels[first_label], A1_sides[A1_side], A2_sides[A2_side]])
     
     with open('Counterbalancing.tsv', 'wb') as cb, open('ParticipantInfo.tsv', 'wb') as pi:
         cb = csv.writer(cb, delimiter='\t')
         pi = csv.writer(pi)
         cb.writerows(rows_cb)
         pi.writerows(rows_pi)
+
+if __name__=="__main__":
+    main()
