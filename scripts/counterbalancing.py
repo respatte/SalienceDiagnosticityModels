@@ -105,7 +105,7 @@ def main():
                                    AGs[4], "WL"+labels[first_label-1]+"_A2"+A2_sides[A2_side]+"_B1"+A2_sides[A2_side-1]]
                     rows_pi[p] += [labels[first_label], A1_sides[A1_side], A2_sides[A2_side]]
     
-    with open('Counterbalancing.tsv', 'w') as cb, open('ParticipantInfo.tsv', 'w') as pi:
+    with open('Counterbalancing.tsv', 'w') as cb, open('ParticipantInfo.csv', 'w') as pi:
         cb = csv.writer(cb, delimiter='\t')
         pi = csv.writer(pi)
         cb.writerows(rows_cb)
