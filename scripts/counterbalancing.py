@@ -3,7 +3,7 @@ import csv
 
 def main():
     # Attention gatherers
-    AGs = ["AG1", "AG2", "AG3", "AG4"]
+    AGs = ["AG1", "AG2", "AG3", "AG4", "AG5"]
     # Category names
     tail_cat = ["A", "B"]
     head_cat = ["1", "2"]
@@ -38,6 +38,8 @@ def main():
     # Familiarisation stimulus order
     order1 = list(range(6))
     order2 = list(range(6))
+    # Familiarisation stimulus facing direction
+    dirs = ["Reg_", "Flip_"]
     # Familiarisation counterbalancing
     p = 0
     while p < 48:
@@ -53,10 +55,10 @@ def main():
                     row_pi = [p]
                     for i in range(12):
                         # Repeat the order twice to get 12 pres/cat in total, with AGs
-                        row_cb.append(fam_stims[first_stim][conditions[condition][name_first_stim]][i//6][order1[i%6]])
-                        row_cb.append(AGs[(2*i)%4])
-                        row_cb.append(fam_stims[first_stim-1][conditions[condition][name_first_stim-1]][i//6][order2[i%6]])
-                        row_cb.append(AGs[(2*i+1)%4])
+                        if i %4 == 0:
+                            row_cb.append(AGs[2 + i//4])
+                        row_cb.append(rd.choice(dirs)+fam_stims[first_stim][conditions[condition][name_first_stim]][i//6][order1[i%6]])
+                        row_cb.append(rd.choice(dirs)+fam_stims[first_stim-1][conditions[condition][name_first_stim-1]][i//6][order2[i%6]])
                     row_pi.append([tail_cat[first_stim], conditions[condition][name_first_stim]])
                     rows_cb.append(row_cb)
                     rows_pi.append(row_pi)
