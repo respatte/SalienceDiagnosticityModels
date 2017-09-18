@@ -58,7 +58,7 @@ def main():
                     row_pi = [p]
                     for i in range(12):
                         # Repeat the order twice to get 12 pres/cat in total, with AGs
-                        if i %4 == 0:
+                        if i %4 == 0 and i > 0:
                             row_cb.append(AGs[2 + i//4])
                         row_cb.append(rd.choice(dirs)+fam_stims[first_stim][conditions[condition][name_first_stim]][i//6][order1[i%6]])
                         row_cb.append(rd.choice(dirs)+fam_stims[first_stim-1][conditions[condition][name_first_stim-1]][i//6][order2[i%6]])
@@ -85,7 +85,7 @@ def main():
                         HC_TC = {"HC":"HC_"+tail_cat[Ot_HC]+head_cat[Oh_HC]+Oh_HC_sides[Oh_HC_side],
                                  "TC":"TC_"+tail_cat[Ot_TC]+head_cat[Oh_TC]+Ot_TC_sides[Ot_TC_side]
                                 }
-                        RC = "RC_"+tail_cat[Ot_TC-1]+Ot_RC_sides[Ot_RC_side]+head_cat[Oh_HC-1]+Ot_RC_sides[Ot_RC_side-1]
+                        RC = "RC_"+tail_cat[Ot_TC-1]+Ot_RC_sides[Ot_RC_side]+"_"+head_cat[Oh_HC-1]+Ot_RC_sides[Ot_RC_side-1]
                         rows_cb[p] += [AGs[0], HC_TC[cb_tests[first_test]], AGs[1], HC_TC[cb_tests[first_test-1]], AGs[2], RC]
                         rows_pi[p] += [cb_tests[first_test], Oh_HC_sides[Oh_HC_side-1],
                                        Ot_TC_sides[Ot_TC_side-1], Ot_RC_sides[Ot_RC_side-1]]
