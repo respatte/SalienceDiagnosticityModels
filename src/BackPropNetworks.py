@@ -17,7 +17,11 @@ class BackPropNetwork(object):
 	
 	Input parameters:
 		n_neurons -- list, num of neurons per layer [input,hidden1,...,output]
-		lrn_rate -- learning rate for backpropagation in ]0, 1]
+		n_salient -- number of neurons for the salient feature (always the first feature)
+		lrn_rates -- tuple of learning rates for backpropagation in ]0, 1]
+			Values are given in this order: global learning rate, learning rate specific
+			to salient feature inputs to first hidden layer, learning rate specific to
+			non-salient feature inputs to first hidden layer
 		momentum -- influence of inertial term in [0, 1], or function
 			If set to a value, it only takes into account the last update
 			values, pondering them with the given value.
@@ -26,7 +30,7 @@ class BackPropNetwork(object):
 			in the calculus with those computed values.
 			Default value is an exponential decay function.
 			For the model to converge, sum(momentum) must be strictly less
-			than lrn_rate.
+			than lrn_rates.
 		
 	BackPropNetwork properties:
 		n_layers -- number of layers for the network
@@ -39,7 +43,7 @@ class BackPropNetwork(object):
 		inertia -- weight update values at previous steps
 			Queue structure of which each element is a list of update values
 			for all weight matrices at a previous run step of the algorithm.
-		lrn_rate -- learning rate for backpropagation
+		lrn_rates -- learning rate for backpropagation
 		momentum -- influence of inertial terms
 		inertial_memory -- number of inertial terms to keep in memory
 		error -- error of the network on the last presented stimulus
@@ -57,7 +61,7 @@ class BackPropNetwork(object):
 		run -- runs the network with one (a set of) input pattern(s)
 		
 	"""
-	def __init__(self,n_neurons,lrn_rate,momentum=exp_decay):
+	def __init__(self,n_neurons,n_salient,lrn_rates,momentum=exp_decay):
 		"""Initialise a simple back-propagation neural network.
 		
 		See class documentation for more details about parameters.
@@ -76,7 +80,13 @@ class BackPropNetwork(object):
 		self.inertia = deque([[self.weights[i] * 0
 							   for i in range(self.n_layers - 1)]])
 		# Adding learning parameters
-		self.lrn_rate = lrn_rate
+		# Defaults to having a bias term
+		self.lrn_rates = (lrn_rates[0],
+						  np.vstack((np.full((n_salient, 1),
+											 lrn_rates[1]),
+									 np.full((n_neurons[0] - n_salient, 1),
+											 lrn_rates[2]),
+									 [[lrn_rates[0]]])))
 		# Set limit size of inertia queue (according to momentum function)
 		self.momentum, self.inertia_memory = self.init_momentum(momentum)
 	
@@ -102,20 +112,21 @@ class BackPropNetwork(object):
 		else:
 			# Remember values only if weight given by momentum > 1e-3
 			r = 1
-			m=0
+			m = 0
 			while r > 1e-3:
 				m += 1
 				r = momentum(m)
 			inertia_memory = m
-			# Check for total inertia being less than lrn_rate
+			# Check for total inertia being less than lrn_rates
 			try:
 				total_inertia = sum([momentum(x)
 									 for x in range(inertia_memory)])
-				assert total_inertia < self.lrn_rate
+				min_lrn_rate = min(self.lrn_rates[0], np.min(self.lrn_rates[1]))
+				assert total_inertia < min_lrn_rate
 			except AssertionError:
 				print("Inertia function weighing too much.",
-					  "Setting it to lrn_rate/2")
-				momentum = self.lrn_rate/2
+					  "Setting it to min_lrn_rate/2")
+				momentum = min_lrn_rate/2
 				inertia_memory = 1
 			return (momentum, inertia_memory)
 	
@@ -181,7 +192,12 @@ class BackPropNetwork(object):
 	
 	def update_weights(self, i, delta):
 		"""Compute updated value for weights of layer i to i+1."""
-		new_weights = self.weights[i] - delta * self.lrn_rate
+		if i == 0:
+			# Use salient-spefici learning rates
+			new_weights = self.weights[i] - np.multiply(delta,self.lrn_rates[1])
+		else:
+			# Use global learning rate
+			new_weights = self.weights[i] - delta * self.lrn_rates[0]
 		if isinstance(self.momentum,float):
 			new_weights += self.momentum * self.inertia[0][i]
 		else:
