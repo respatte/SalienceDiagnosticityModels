@@ -63,7 +63,8 @@ class BackPropNetwork(object):
 		run -- runs the network with one (a set of) input pattern(s)
 		
 	"""
-	def __init__(self,n_neurons,n_salient,lrn_rates,momentum=exp_decay):
+	def __init__(self,n_neurons,n_label,n_salient,
+				 lrn_rates,momentum=exp_decay):
 		"""Initialise a simple back-propagation neural network.
 		
 		See class documentation for more details about parameters.
@@ -82,11 +83,13 @@ class BackPropNetwork(object):
 		self.inertia = deque([[self.weights[i] * 0
 							   for i in range(self.n_layers - 1)]])
 		# Adding learning parameters
-		# Defaults to having a bias term
+		# Defaults to having a bias term, and using global learning rate for label units
 		self.lrn_rates = (lrn_rates[0],
-						  np.vstack((np.full((n_salient, 1),
+						  np.vstack((np.full((n_label, 1),
+											 lrn_rates[0]),
+									 np.full((n_salient, 1),
 											 lrn_rates[1]),
-									 np.full((n_neurons[0] - n_salient, 1),
+									 np.full((n_neurons[0] - (n_label+n_salient), 1),
 											 lrn_rates[2]),
 									 [[lrn_rates[0]]])))
 		# Set limit size of inertia queue (according to momentum function)
