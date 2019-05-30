@@ -43,7 +43,9 @@ class BackPropNetwork(object):
 		inertia -- weight update values at previous steps
 			Queue structure of which each element is a list of update values
 			for all weight matrices at a previous run step of the algorithm.
-		lrn_rates -- learning rate for backpropagation
+		lrn_rates -- tuple of learning rates for backpropagation
+			First value is the global learning rate, second value is
+			a vector of salience-specific learning rates
 		momentum -- influence of inertial terms
 		inertial_memory -- number of inertial terms to keep in memory
 		error -- error of the network on the last presented stimulus

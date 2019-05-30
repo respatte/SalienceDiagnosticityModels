@@ -9,7 +9,7 @@ class Subject(object):
 	"""Global subject class with methods common to all subject types.
 	
 	Input parameters:
-		proto -- tuple of two prototypes of same size
+		stims -- tuple of two prototypes of same size
 			All object-specific information is encoded into the stimuli.
 			This includes any overlap in visual/physical properties of
 			the two stimuli.
@@ -17,181 +17,72 @@ class Subject(object):
 			absence of a label being coded as zeros). The label and its
 			size in encoding are set beforehands, as it is not subject-
 			specific. 
-		exploration -- tuple of values for exploration importance and overlap
-			The first value of the tuple defines the number of units on
-			which exploration will be encoded. A bigger number of units
-			means a richer exploration of the stimulus by the subject.
-			The second value is a ratio (in [0, 1]), and defines the
-			overlap in the encoding of exploration between the two
-			stimuli, i.e. the between-stimulus similarity amongst haptic
-			and interaction dimensions. This is subject-specific.
-		theory -- theory implemented (CR or LaF)
 		l_size -- label size
 		h_ratio -- ratio of hidden neurons compared to input neurons
-		lrn_rate -- learning rate(s) of the backpropagation network
+		lrn_rates -- learning rates of the backpropagation network
 		momentum -- influence of inertial term in [0, 1], or function
-		model -- model used for neural network (BPN or DMN)
-			If using DMN (DualMemoryNetwork), then learning rate and
-			momentum must be given for both memories and lateral
-			connections.
-			See BackPropNetworks.DualMemoryNetwork documentation for more
-			precision.
 	
 	Subject properties:
-		proto_stims -- tuple of two prototype stimuli of same size
+		stims -- tuple of two prototype stimuli of same size
 			Those stimuli include both the input stimuli (object-specific)
 			and the exploration of the stimuli (subject-specific).
 			When implementing a CR model, the label part is cut off.
-		proto_goals -- training goals for the network
-			Same as full_stims, keeping the label for both Laf and CR.
 		net -- backpropagation network used for learning
-		impair -- target network for memory impairment
 	
 	Subject methods:
-		encode_explo -- encode stimuli exploration given importance and overlap
-		impair_memory -- impairs the memory, typically between training and test
-		fam_training -- performs familiarisation trials as in T&W2017
+		fam_training -- performs familiarisation trials as in SalienceDiagnosticityEmpirical
+		contrast_test -- performs contrast test trials as in SalienceDiagnosticityEmpirical
+		word_learning_test -- performs word learning test trials as in SalienceDiagnosticityEmpirical
 	
 	"""
 	
-	def __init__(self, proto, exploration, theory, l_size, h_ratio, lrn_rate,
-				 momentum=None, model="DMN"):
+	def __init__(self, stim_size, n_salient, h_ratio, lrn_rates, momentum=None):
 		"""Initialise a simple labeltime subject for K&W2017.
 		
 		See class documentation for more details about parameters.
 		
 		"""
-		# Create full stimuli
-		# Create exploration if necessary
-		if exploration[0]:
-			explo_proto = self.encode_explo(exploration[0], exploration[1])
-		else:
-			# Create array of with no columns
-			explo_proto = (np.zeros((1, 0)), np.zeros((1, 0)))
-		full_proto = (np.hstack((proto[0], explo_proto[0])),
-					  np.hstack((proto[1], explo_proto[1])))
-		# Create proto_goals as copies of stimuli
-		self.proto_goals = cp.deepcopy(full_proto)
-		# Delete input label if CR model
-		# theory gives number of label units if CR, 0 if LaF
-		if theory == "CR":
-			full_proto = (np.delete(full_proto[0], range(l_size), axis=1),
-						  np.delete(full_proto[1], range(l_size), axis=1))
-		self.proto_stims = full_proto
 		# Create backpropagation network
-		n_input = self.proto_stims[0].size
-		n_output = self.proto_goals[0].size
+		n_input = stim_size
+		n_output = stim_size
 		n_hidden = int(n_output * h_ratio)
-		self.model = model
-		if model == "BPN":
-			if momentum:
-				self.net = bpn.BackPropNetwork([n_input, n_hidden, n_output],
-											   lrn_rate, momentum)
-			else:
-				self.net = bpn.BackPropNetwork([n_input, n_hidden, n_output],
-											   lrn_rate)
-		elif model == "DMN":
-			# Compute layer sizes for STM (without label output)
-			# Label deleted within DualMemoryNetwork model to fit goal to size
-			n_input_STM = n_input
-			n_output_STM = n_output - l_size
-			n_hidden_STM = int(n_output_STM * h_ratio)
-			# Create the network
-			if momentum:
-				self.net = bpn.DualMemoryNetwork([[n_input,
-												   n_hidden,
-												   n_output],
-												  [n_input_STM,
-												   n_hidden_STM,
-												   n_output_STM]
-												 ],
-												 lrn_rate, momentum=momentum)
-			else:
-				self.net = bpn.DualMemoryNetwork([[n_input,
-												   n_hidden,
-												   n_output]] * 2,
-												 lrn_rate)
+		if momentum:
+			self.net = bpn.BackPropNetwork([n_input, n_hidden, n_output],
+										   n_salient, lrn_rates, momentum)
+		else:
+			self.net = bpn.BackPropNetwork([n_input, n_hidden, n_output],
+										   n_salient, lrn_rates)
 	
-	@property # Create self.impaired as an access-only property
-	def impaired(self):
-		"""Access the network to impair when needed"""
-		if self.model == "BPN":
-			return self.net
-		elif self.model == "DMN":
-			return self.net.STM
-	
-	def encode_explo(self, n_explo, ratio):
-		"""Encodes exploration of two stimuli with overlapping.
-
-		The number of overlapping units is rounded so that the number of
-		remaining units is even, which is a mathematical requirement.
-		"""
-		# Initialise exploration as ones
-		explo1 = np.ones((1,n_explo))
-		explo2 = np.ones((1,n_explo))
-		# Computes number of overlapping units
-		n_overlap = int(n_explo * ratio)
-		if (n_explo - n_overlap) % 2:
-			n_overlap += 1
-		n_diff = n_explo - n_overlap
-		# Select which indices to change to zero for each explo
-		# First create a list of indices
-		i_total = np.arange(n_explo)
-		# Only keep indices with no overlap
-		i_diff = np.random.choice(i_total, size=n_diff, replace=False)
-		# Select half of the remaining indices for explo1
-		i_explo1 = np.random.choice(i_diff, size=n_diff//2, replace=False)
-		# Builds indices for explo2 as indices from i_diff not in i_explo1
-		i_explo2 = np.setdiff1d(i_diff, i_explo1, assume_unique=True)
-		# Set selected values to zero in explo1 and explo2
-		explo1[0, i_explo1] = 0
-		explo2[0, i_explo2] = 0
-		return (explo1,explo2)
-	
-	def impair_memory(self, connections, method=None, inertia=True):
-		"""Impair subject's memory at given level of connections.
+	def fam_training(self, stims, n_steps, rec_epoch):
+		"""Compute the familiarisation phase for SalienceDiagnosticityEmpirical.
 		
-		Connections is a list of at least one connection index as
-		described BackPropNetworks.
-		Method is a string that will be evaluated. Result is added to
-		selected weight matrix. A typical example is to use a uniform
-		distribution to add noise to the weight matrix. In the method,
-		parameters for size must be called m (rows) and n (columns),
-		and are extracted from the selected weight matrix before the
-		function is evaluated.
-		If no method is given, reset connections using initialisation
-		function from the network.
-		For a dual memory network subject, only STM is affected.
-		
-		If inertia is set to False, then the inertia of the model is not
-		erased. Default behaviour is to reinitialise inertia to zeros.
-		
-		Actions are performed in place, no return of the function.
+		Return network errors after each presentation, and hidden
+		representations at specified epochs.
 		
 		"""
-		for c in connections:
-			# Get shape from selected weight matrix
-			# Since this information takes the bias weights into account,
-			# we don't need to deal with presence/absence of bias here.
-			m, n = self.impaired.weights[c].shape
-			if method:
-				# Add the evaluated method to the matrix
-				self.impaired.weights[c] += eval(method)
-			else:
-				# Reinitialise the wmatrix
-				self.impaired.weights[c] = self.net.init_weights_matrix(m, n,
-																	 bias=False)
-		if inertia:
-			# Reset last inertia to zeros for all layers
-			for layer in range(self.impaired.n_layers-1):
-				self.impaired.inertia[0][layer] *= 0
-			# Delete older inertia
-			for _ in range(len(self.impaired.inertia)-1):
-				self.impaired.inertia.pop()
+		# Initialise hidden representations dictionary
+		h_reps = {}
+		errors = []
+		# Shuffle stims from each category
+		np.random.shuffle(stims[0])
+		np.random.shuffle(stims[1])
+		# Get number of stimuli
+		n_stims = len(stims[0])
+		for step in range(n_steps):
+			for stim in range(n_stims):
+				# Train the network on an exemplar from each category, save errors
+				self.net.run(stims[0][stim])
+				errors.append(self.net.error)
+				self.net.run(stims[1][stim])
+				errors.append(self.net.error)
+				if not (1+step) % rec_epoch or step==n_steps-1:
+					# Save hidden representations
+					h_reps[1+step] = self.net.neurons[1]
+		return errors, h_reps
 	
-	def fam_training(self, test_stims, test_goals,
+	def test_training(self, test_stims, test_goals,
 					 pres_time, threshold, n_trials):
-		"""Computes familiarisation training on test_stims.
+		"""Computes .
 		
 		The model is presented with each stimulus, alternating, for
 		n_trials number of trials. For each trial, the model is presented
