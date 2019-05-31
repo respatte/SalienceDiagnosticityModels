@@ -62,20 +62,29 @@ class Subject(object):
 		# Initialise outputs
 		h_reps = {}
 		errors = {}
-		# Shuffle stims from each category
-		np.random.shuffle(stims[0])
-		np.random.shuffle(stims[1])
 		# Get number of stimuli
 		n_stims = len(stims[0])
+		# Shuffle stims indices from each category
+		stims_i = [np.arange(n_stims), np.arange(n_stims)]
+		np.random.shuffle(stims_i[0])
+		np.random.shuffle(stims_i[1])
 		for step in range(n_steps):
+			block_h_reps = {}
+			block_errors = []
 			for stim in range(n_stims):
-				# Train the network on an exemplar from each category
-				self.net.run(stims[0][stim])
-				self.net.run(stims[1][stim])
-				if not (1+step) % rec_epoch or step==n_steps-1:
-					# Save hidden representations and errors
-					h_reps[1+step] = self.net.neurons[1]
-					errors[1+step] = np.linalg.norm(self.net.error)
+				for cat in range(2):
+					# Train the network on an exemplar from each category
+					self.net.run(stims[cat][stims_i[cat][stim]])
+					if not (1+step) % rec_epoch or step==n_steps-1:
+						# Save hidden representation and stim type
+						stim_type = str(cat) + str(stims_i[cat][stim])
+						block_h_reps[stim_type] = self.net.neurons[1]
+						# Save error
+						block_errors.append(np.linalg.norm(self.net.error))
+			if not (1+step) % rec_epoch or step==n_steps-1:
+				# Save hidden representations and errors
+				h_reps[1+step] = block_h_reps
+				errors[1+step] = np.mean(block_errors)
 		return errors, h_reps
 	
 	def contrast_test(self, contrast_stims, pres_time, threshold):
