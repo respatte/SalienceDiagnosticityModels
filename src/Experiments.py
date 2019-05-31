@@ -23,7 +23,7 @@ class Experiment(object):
 		n_blocks -- number of test blocks
 		h_ratio -- ratios from output to hidden layer for networks
 	
-	SingleObjectExperiment properties:
+	Experiment properties:
 		pres_time -- max number of presentations at familiarisation
 		threshold -- "looking away" threshold at familiarisation
 		n_trials -- number of familiarisation trials
@@ -38,7 +38,7 @@ class Experiment(object):
 		fam_stims -- full stimuli for familiarisation trials
 			A tuple of 4 stimuli lists. In order, 
 	
-	SingleObjectExperiment methods:
+	Experiment methods:
 		run_experiment -- run a ful experiment, using only class properties
 		generate_stims -- generate physical stimuli with overlap
 		output_data -- convert results data to a csv file
@@ -52,12 +52,13 @@ class Experiment(object):
 		See class documentation for more details about parameters.
 		
 		"""
-		self.pres_time = test_pres_time
+		self.n_fam_pres = n_fam_pres
+		self.test_pres_time = test_pres_time
 		self.threshold = threshold
 		self.h_ratio = h_ratio
 		# Learning rates and momentum
 		self.lrn_rates = lrn_rates
-		self.momenta = .05
+		self.momentum = .05
 		# Get meaningful short variables from input
 		# l_ -> label_
 		# h_ -> head_
@@ -169,40 +170,21 @@ class Experiment(object):
 	
 	def run_subject(self, subject_i, method):
 		"""Run familiarisation for a single subject."""
-		# Code s_type (subject type) on 4 bits:
-		# 	- labbeled item (0=first item labelled, 1=second item labelled)
-		# 	- first familiarisation item (1=labelled, 0=unlabelled)
-		#	- theory (0=LaF, 1=CR)
-		s_type = format(subject_i%8,'03b') # type: str
-		# Get background stimuli
-		bg_stims = self.create_subject_stims(s_type)
-		# Create subjects
-		s = self.create_subject(bg_stims, s_type)
-		# Perform background training on subject
-		t_results = s.bg_training(self.bg_parameters)
-		t_result = s
-		# Impair subject recovery memory (hidden to output)
-		s.impair_memory([1], method)
-		# Prepare stimuli order for familiarisation trials
-		labelled_i = int(s_type[0])
-		first_fam = int(s_type[1])
-		first_stim = first_fam * labelled_i + \
-					 (1 - first_fam) * (1 - labelled_i)
-		test_stims = (self.test_stims[first_stim],
-					  self.test_stims[1 - first_stim])
-		test_goals = test_stims
-		# Stimuli for CR: delete label units
-		theory = int(s_type[2])
-		if theory:
-			test_stims = (np.delete(test_stims[0], range(self.l_size), axis=1),
-						  np.delete(test_stims[1], range(self.l_size), axis=1))
-		# Run and record familiarisation training
-		f_result = s.fam_training(test_stims, test_goals,
-								  self.pres_time,
-								  self.threshold,
-								  self.n_trials)
-		# Adding a tuple with one value for exploration overlap ratio
-		return (f_result, self.e_ratio), t_results
+		# Code s_type (subject type) on 2 bits:
+		# 	- condition (0=no-label, 1=label)
+		#	- contrast trial (for counterbalancing)
+		s_type = format(subject_i%4,'02b') # type: str
+		# Create subject
+		s = Subject(self.l_size+self.h_size+self.t_size, self.l_size, self.h_size,
+					self.h_ratio, self.lrn_rates, self.momentum)
+		# Run familiarisation
+		fam_results = s.fam_training(self.fam_stims[int(s_type[0])],
+									 self.n_fam_pres, 1)
+		# Run contrast test trials
+		contrast_results = s.contrast_test(self.contrast_stims[int(s_type[1])],
+										   self.test_pres_time, self.threshold)
+		# Return results
+		return fam_results, contrast_results
 		
 	def run_experiment(self, method=None):
 		"""Run a full experiment.
@@ -220,19 +202,17 @@ class Experiment(object):
 		results_async = {}
 		# Start running subjects
 		with Pool() as pool:
-			for s in range(self.start_subject,
-						   self.start_subject + self.n_subjects):
-				results_async[s] = pool.apply_async(self.run_subject,
-													(s, method))
+			for subject_i in range(self.n_subjects):
+				results_async[subject_i] = pool.apply_async(self.run_subject,
+															(subject_i, method))
 			pool.close()
 			pool.join()
-		f_results = {}
-		t_results = {}
-		for s in range(self.start_subject,
-					   self.start_subject + self.n_subjects):
-			f_results[s] = results_async[s].get()[0]
-			t_results[s] = results_async[s].get()[1]
-		return f_results, t_results
+		fam_results = {}
+		contrast_results = {}
+		for subject_i in range(self.n_subjects):
+			fam_results[subject_i] = results_async[subject_i].get()[0]
+			contrast_results[subject_i] = results_async[subject_i].get()[1]
+		return fam_results, contrast_results
 	
 	def output_fam_data(data, filename):
 		"""Write data from familiarisation into a filename.csv file.
@@ -241,54 +221,82 @@ class Experiment(object):
 		
 		data is a dictionary structured as follows:
 		- keys = subject numbers
-			- looking_times (number of backpropagations before threshold)
-				- trial number
-					- looking time to first stimulus
-					- looking time to second stimulus
-			- explo_ratio (exploration overlap ratio for subject)
-		Number of trials is assumed to be fixed.
+			- network error
+				- key = block number
+			- hidden representations
+				- key = block number
 		Subject are ordered so that subject%4 in binary codes for
-			- first value: labbeled item (0=first item, 1=second item)
-			- second value: first familiarisation item (1=labelled,0=unlabelled)
-		
+			- first value: condition (0=no-label, 1=label)
+			
+		Output a filename_errors.csv file and a filename_hidden_reps.csv file.
 		"""
+		# Network errors
 		# Define column labels
 		c_labels_LT = ','.join(["subject",
-								"theory",
-								"explo_overlap",
-								"trial",
-								"labelled",
-								"looking_time"])
+								"condition",
+								"block",
+								"error"])
 		rows_LT = [c_labels_LT]
-		# Extract number of trials
-		k = list(data.keys())[0]
-		n_trials = len(data[k][0])
 		# Prepare meaningful coding for parameters
-		theories = ("LaF", "CR")
-		labelled = ("no_label", "label")
-		pres_time = 100
+		condition = ("no_label", "label")
 		for subject in data:
 			# Extract information from subject number
-			s_type = format(subject%8,'03b')
-			theory = int(s_type[2])
-			first_fam = int(s_type[1])
-			for trial in range(n_trials):
-				for stim in range(2):
-					# Encode state for current stimulus
-					labelled_stim = (stim + first_fam) % 2
-					# Create row for looking time results
-					row = [str(subject),
-						   theories[theory],
-						   str(data[subject][1]),
-						   str(trial),
-						   labelled[labelled_stim],
-						   str(data[subject][0][trial][stim])
-						   ]
-					rows_LT.append(','.join(row))
+			s_type = format(subject%4,'02b')
+			for block in data[subject][0]:
+				# Create row for looking time results
+				row = [str(subject),
+					   condition[int(s_type[0])],
+					   str(block),
+					   str(data[subject][0][block])
+					   ]
+				rows_LT.append(','.join(row))
 		# Join all rows with line breaks
 		data_LT = '\n'.join(rows_LT)
 		# Write str results into two files with meaningful extensions
-		with open(filename+"_LT.csv", 'w') as f:
+		with open(filename+"_errors.csv", 'w') as f:
+			f.write(data_LT + "\n")
+	
+	def output_contrast_data(data, filename):
+		"""Write data from contrast test trials into a filename.csv file.
+
+		Class-wide (not instance-specific) method.
+		
+		data is a dictionary structured as follows:
+		- keys = subject numbers
+			- Head/Tail
+				-Old/New
+					- looking time (number of presentations to learning)
+		Subject are ordered so that subject%4 in binary codes for
+			- first value: condition (0=no-label, 1=label)
+		
+		"""
+		# Network errors
+		# Define column labels
+		c_labels_LT = ','.join(["subject",
+								"condition",
+								"contrast_type",
+								"feature",
+								"looking_time"])
+		rows_LT = [c_labels_LT]
+		# Prepare meaningful coding for parameters
+		condition = ("no_label", "label")
+		for subject in data:
+			# Extract information from subject number
+			s_type = format(subject%4,'02b')
+			for contrast_type in data[subject]:
+				for feature in data[subject][contrast_type]:
+					# Create row for looking time results
+					row = [str(subject),
+						   condition[int(s_type[0])],
+						   str(contrast_type),
+						   str(feature),
+						   str(data[subject][contrast_type][feature])
+						   ]
+				rows_LT.append(','.join(row))
+		# Join all rows with line breaks
+		data_LT = '\n'.join(rows_LT)
+		# Write str results into two files with meaningful extensions
+		with open(filename+".csv", 'w') as f:
 			f.write(data_LT + "\n")
 
 	def output_train_data(data, filename):
