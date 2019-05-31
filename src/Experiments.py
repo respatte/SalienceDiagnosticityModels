@@ -35,7 +35,8 @@ class Experiment(object):
 		p_ratio -- overlap ratio for physical values
 		p_proto -- physical values for prototypes
 		l_stims -- label values for stimuli
-		test_stims -- full stimuli (label+physical+exploration) for test trials
+		fam_stims -- full stimuli for familiarisation trials
+			A tuple of 4 stimuli lists. In order, 
 	
 	SingleObjectExperiment methods:
 		run_experiment -- run a ful experiment, using only class properties
@@ -44,58 +45,53 @@ class Experiment(object):
 	
 	"""
 	
-	def __init__(self, modality_sizes, overlap_ratio, n_subjects,
-				 start_subject, pres_time, threshold, n_blocks, h_ratio):
+	def __init__(self, modality_sizes, overlap_ratio, lrn_rates,
+				 n_subjects, n_fam_pres, test_pres_time, threshold, h_ratio):
 		"""Initialise a labeltime experiment.
 		
 		See class documentation for more details about parameters.
 		
 		"""
-		self.pres_time = pres_time
+		self.pres_time = test_pres_time
 		self.threshold = threshold
-		self.n_blocks = n_blocks
 		self.h_ratio = h_ratio
-		# Theory list
-		self.theories = ["LaF", "CR"]
-		# Learning rates and momenta list
-		self.lrn_rates = (.001, .1)
-		self.momenta = (.0005, .05)
+		# Learning rates and momentum
+		self.lrn_rates = lrn_rates
+		self.momenta = .05
 		# Get meaningful short variables from input
 		# l_ -> label_
-		# p_ -> physical
-		# e_ -> exploration
-		(self.l_size, self.t_size, self.b_size, self.h_size) = modality_sizes
-		self.p_ratio = overlap_ratio
+		# h_ -> head_
+		# t_ -> tail_
+		# ol_ -> overlap_
+		(self.l_size, self.h_size, self.t_size) = modality_sizes
+		self.ol_ratio = overlap_ratio
 		self.n_subjects = n_subjects
-		self.start_subject = start_subject
-		# Generate physical values for stimuli prototypes
-		self.t_proto = self.generate_stims(self.t_size, self.p_ratio)
-		self.h_proto = self.generate_stims(self.h_size, self.p_ratio)
-		self.b_proto = np.ones((1, self.b_size))
-		# Generate physical values for stimuli (full categories)
-		self.t_cat = (self.generate_category(self.t_proto[0], 8, "continuous"),
-					  self.generate_category(self.t_proto[1], 8, "continuous"))
-		self.h_cat = (self.generate_category(self.h_proto[0], 8, "continuous"),
-					  self.generate_category(self.h_proto[1], 8, "continuous"))
-		# Bodies far more similar to each other than tails or heads
-		self.b_cat = self.generate_category(self.b_proto, 16, "continuous",
-											.1, 0.1)
-		# Generate (no_label, label) part to add to one or the other stimulus
-		label = np.ones((1, self.l_size))
-		no_label = np.zeros((1, self.l_size))
-		self.l_stims = (no_label, label) # index on l_stims is presence of label
-		# Generate test stimuli with zeros for label and exploration
-		# ========== TODO ==========
-		#self.test_stims = (np.hstack((np.zeros((1, self.l_size)),
-		#							  self.p_proto[0],
-		#							  np.zeros((1, self.e_size))
-		#							  )),
-		#				   np.hstack((np.zeros((1, self.l_size)),
-		#							  self.p_proto[1],
-		#							  np.zeros((1, self.e_size))
-		#							  ))
-		#				   )
-		# ==========================
+		# Generate feature prototypes
+		t_proto = self.generate_stims(self.t_size, self.ol_ratio)
+		h_proto = self.generate_stims(self.h_size, self.ol_ratio)
+		# Generate feature (full categories)
+		self.t_stims = (self.generate_category(t_proto[0], 8, "continuous"),
+						self.generate_category(t_proto[1], 8, "continuous"))
+		self.h_stims = (self.generate_category(h_proto[0], 8, "continuous"),
+						self.generate_category(h_proto[1], 8, "continuous"))
+		# Generate (no_labels, labels) part to add to one or the other stimulus
+		# Using two no-labels for ease of automation
+		labels = self.generate_stims(self.l_size, 0)
+		no_labels = (np.zeros((1, self.l_size)),
+					 np.zeros((1, self.l_size)))
+		self.l_stims = (no_labels, labels) # index on l_stims is presence of label
+		# Generate familiarisation stimuli
+		self.fam_stims = []
+		for condition in range(2):
+			categories = []
+			for category in range(2):
+				stims = []
+				for i in range(6):
+					stims.append(np.hstack((self.l_stims[condition][category],
+											self.h_stims[(i+category)%2][i],
+											self.t_stims[category][i])))
+				categories.append(stims)
+			self.fam_stims.append(categories)
 	
 	def generate_stims(self, size, ratio):
 		"""Generate two stims of given size with given overlap ratio."""
