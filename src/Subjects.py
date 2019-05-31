@@ -56,13 +56,12 @@ class Subject(object):
 	def fam_training(self, stims, n_steps, rec_epoch):
 		"""Compute the familiarisation phase for SalienceDiagnosticityEmpirical.
 		
-		Return network errors after each presentation, and hidden
-		representations at specified epochs.
+		Return network errors and hidden representations at specified epochs.
 		
 		"""
 		# Initialise outputs
 		h_reps = {}
-		errors = []
+		errors = {}
 		# Shuffle stims from each category
 		np.random.shuffle(stims[0])
 		np.random.shuffle(stims[1])
@@ -70,14 +69,13 @@ class Subject(object):
 		n_stims = len(stims[0])
 		for step in range(n_steps):
 			for stim in range(n_stims):
-				# Train the network on an exemplar from each category, save errors
+				# Train the network on an exemplar from each category
 				self.net.run(stims[0][stim])
-				errors.append(np.linalg.norm(self.net.error))
 				self.net.run(stims[1][stim])
-				errors.append(np.linalg.norm(self.net.error))
 				if not (1+step) % rec_epoch or step==n_steps-1:
-					# Save hidden representations
+					# Save hidden representations and errors
 					h_reps[1+step] = self.net.neurons[1]
+					errors[1+step] = np.linalg.norm(self.net.error)
 		return errors, h_reps
 	
 	def contrast_test(self, contrast_stims, pres_time, threshold):
