@@ -92,6 +92,34 @@ class Experiment(object):
 											self.t_stims[category][i])))
 				categories.append(stims)
 			self.fam_stims.append(categories)
+		# Generate new features for contrast test trials
+		self.t_new = self.generate_stims(self.t_size, .1)[0]
+		self.h_new = self.generate_stims(self.t_size, .1)[0]
+		# Generate two full sets of contrast test stims (for counterbalancing)
+		self.contrast_stims = ({"Head":{"Old":np.hstack((self.l_stims[0][0],
+														 self.h_stims[0][6],
+														 self.t_stims[0][6])),
+										"New":np.hstack((self.l_stims[0][0],
+														 self.h_new,
+														 self.t_stims[1][6]))},
+								"Tail":{"Old":np.hstack((self.l_stims[0][0],
+														 self.h_stims[0][7],
+														 self.t_stims[0][7])),
+										"New":np.hstack((self.l_stims[0][0],
+														 self.h_stims[1][6],
+														 self.t_new))}},
+							   {"Head":{"Old":np.hstack((self.l_stims[0][0],
+														 self.h_stims[1][7],
+														 self.t_stims[0][7])),
+										"New":np.hstack((self.l_stims[0][0],
+														 self.h_new,
+														 self.t_stims[1][6]))},
+								"Tail":{"Old":np.hstack((self.l_stims[0][0],
+														 self.h_stims[1][6],
+														 self.t_stims[1][6])),
+										"New":np.hstack((self.l_stims[0][0],
+														 self.h_stims[0][7],
+														 self.t_new))}})
 	
 	def generate_stims(self, size, ratio):
 		"""Generate two stims of given size with given overlap ratio."""
