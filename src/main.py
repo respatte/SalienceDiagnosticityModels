@@ -33,23 +33,17 @@ def run_subjects(n_subjects, experiment, bash_i=0, explo_ratio=None,
 def main():
 	total = time.time()
 	warnings.filterwarnings("ignore")
-	# Run SingleObject experiment with various exploration ratios
-	explo_ratios = [.25,.375,.5,.625,.75]
-	results_SO = {}
-	for i, explo_ratio in enumerate(explo_ratios):
-		results_SO.update(run_subjects(16, "SingleObject", i, explo_ratio,
-									   verbose=True)[0])
-	Experiment.output_fam_data(results_SO, "../Results/SingleObject")
 	# Run Category experiment
-	results_C = run_subjects(16*5, "Category", verbose=True)
-	Experiment.output_fam_data(results_C[0], "../Results/Category")
-	Experiment.output_train_data(results_C[1], "../Results/Category")
+	e = Experiment((8,10,10), .1, (.1,.12,.08), 48, 1000, 100, 1e-3, 19/24)
+	results = e.run_experiment()
+	Experiment.output_fam_data(results[0], "../results/familiarisation")
+	Experiment.output_contrast_data(results[1], "../results/contrast_test_trials")
 	total = time.gmtime(time.time() - total)
 	print("="*27,
 		  "Total run time:",
 		  time.strftime("%H:%M:%S",total),
 		  "="*27)
-	return (results_SO, results_C)
+	return results
 
 if __name__ == "__main__":
-	results_SO, results_C = main()
+	fam_results, contrast_results = main()
