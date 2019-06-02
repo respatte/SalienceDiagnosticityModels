@@ -225,6 +225,7 @@ class Experiment(object):
 				- key = block number
 			- hidden representations
 				- key = block number
+					- key = stim_type
 		Subject are ordered so that subject%4 in binary codes for
 			- first value: condition (0=no-label, 1=label)
 			
@@ -255,6 +256,44 @@ class Experiment(object):
 		# Write str results into two files with meaningful extensions
 		with open(filename+"_errors.csv", 'w') as f:
 			f.write(data_LT + "\n")
+		
+		# Hidden representations
+		# Define general column labels
+		c_labels_HR = ','.join(["subject",
+								"condition",
+								"block",
+								"stim_type"])
+		# Get dimensions
+		dims = data[0][1][1]["00"].size
+		dims_labels = ["dim"+str(i) for i in range(dims)]
+		# Generate final column labels
+		rows_HR = [','.join([c_labels_HR] + dims_labels)]
+		# Prepare meaningful coding for parameters
+		condition = ("no_label", "label")
+		t_cats = ("A", "B")
+		h_cats = ("1", "2")
+		for subject in data:
+			# Extract information from subject number
+			s_type = format(subject%4,'02b')
+			for block in data[subject][1]:
+				for stim in data[subject][1][block]:
+					t_type = t_cats[int(stim[0])]
+					h_type = h_cats[(int(stim[0])+int(stim[1]))%2]
+					stim_type = t_type + h_type
+				# Create row for looking time results
+				glob = [str(subject),
+					   condition[int(s_type[0])],
+					   str(block),
+					   stim_type
+					   ]
+				h_rep = [str(data[subject][1][block][stim][0,i])
+						 for i in range(dims)]
+				rows_HR.append(','.join(glob + h_rep))
+		# Join all rows with line breaks
+		data_HR = '\n'.join(rows_HR)
+		# Write str results into two files with meaningful extensions
+		with open(filename+"_hidden_reps.csv", 'w') as f:
+			f.write(data_HR + "\n")
 	
 	def output_contrast_data(data, filename):
 		"""Write data from contrast test trials into a filename.csv file.
@@ -270,7 +309,7 @@ class Experiment(object):
 			- first value: condition (0=no-label, 1=label)
 		
 		"""
-		# Network errors
+		# Looking times
 		# Define column labels
 		c_labels_LT = ','.join(["subject",
 								"condition",
@@ -298,70 +337,3 @@ class Experiment(object):
 		# Write str results into two files with meaningful extensions
 		with open(filename+".csv", 'w') as f:
 			f.write(data_LT + "\n")
-
-	def output_train_data(data, filename):
-		"""Write data from training into a filename.csv file.
-
-		Class-wide (not instance-specific) method.
-		
-		data is a dictionary structured as follows:
-		- keys = subject numbers
-			- hidden representations as returned per CategorySubject.bg_training
-		Number of trials is assumed to be fixed.
-		Subject are ordered so that subject%4 in binary codes for
-			- first value: labbeled item (0=first item, 1=second item)
-			- second value: first familiarisation item (1=labelled,0=unlabelled)
-		
-		"""
-		# Create general column labels
-		c_labels = ','.join(["subject",
-							 "theory",
-							 "step",
-							 "labelled",
-							 "exemplar"])
-		# Get list of recorded steps for subject 0
-		k = list(data.keys())[0]
-		steps = list(data[k].keys())
-		# Get dimension of hidden representations for LTM/STM
-		dims_LTM = data[0][steps[0]]["LTM"][0][0].size
-		dims_STM = data[0][steps[0]]["STM"][0][0].size
-		# Create dimension column names
-		dims_labels_LTM = ["dim" + str(i) for i in range(dims_LTM)]
-		dims_labels_STM = ["dim" + str(i) for i in range(dims_STM)]
-		# Create final column labels
-		rows_LTM = [','.join([c_labels] + dims_labels_LTM)]
-		rows_STM = [','.join([c_labels] + dims_labels_STM)]
-		# Prepare meaningful coding for parameters
-		theories = ("LaF", "CR")
-		labelled = ("label", "no_label")
-		for subject in data:
-			# Extract information from subject number
-			s_type = format(subject%8,'03b')
-			theory = int(s_type[2])
-			max_step = max(data[subject])
-			for step in data[subject]:
-				for category in range(2):
-					for exemplar in range(4):
-						# Create row for hidden representation results
-						glob = [str(subject),
-								theories[theory],
-								str(step * (step<max_step)),
-								labelled[category],
-								str(exemplar + 4*category),
-								]
-						LTM = [str(data[subject][step]["LTM"]\
-									   [category][exemplar][0,j])
-							   for j in range(dims_LTM)]
-						STM = [str(data[subject][step]["STM"]\
-									   [category][exemplar][0,j])
-							   for j in range(dims_STM)]
-						rows_LTM.append(','.join(glob + LTM))
-						rows_STM.append(','.join(glob + STM))
-		# Join all rows with line breaks
-		data_LTM = '\n'.join(rows_LTM)
-		data_STM = '\n'.join(rows_STM)
-		# Write str results into two files with meaningful extensions
-		with open(filename+"_hidden_LTM.csv", 'w') as f:
-			f.write(data_LTM + "\n")
-		with open(filename+"_hidden_STM.csv", 'w') as f:
-			f.write(data_STM + "\n")
