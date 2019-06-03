@@ -6,44 +6,35 @@ from multiprocessing import Pool
 
 from Experiments import *
 
-def run_subjects(n_subjects, experiment, bash_i=0, explo_ratio=None,
-				 verbose=False):
+def run_subjects(lrn_rates, verbose=True):
 	if verbose:
 		t = time.time()
-		print("=" * 40)
-		if explo_ratio is not None:
-			print("Starting runs for explo_ratio =", explo_ratio)
-		else:
-			print("Starting runs for CategoryExperiment")
-	if experiment == "SingleObject":
-		condition = SingleObjectExperiment((5,10,8), (.1,explo_ratio),
-										   n_subjects, n_subjects*bash_i)
-	elif experiment == "Category":
-		condition = CategoryExperiment((5,10,0), (.1, 0),
-									   n_subjects, n_subjects*bash_i)
-	noise = "np.random.uniform(.1, .3, (m,n)) * "
-	noise += "(2 * np.random.binomial(1, .5, (m,n)) - 1)"
-	reinit = None
-	results = condition.run_experiment(method=noise)
+		print("=" * 50)
+		print("Starting run for lrn_rates =", lrn_rates)
+	e = Experiment((8,10,10), .1, lrn_rates, 48, 2000, 200, 1e-3, 10/28)
+	results = e.run_experiment()
+	Experiment.output_fam_data(results[0],
+							   "../results/familiarisation_" +\
+							   str(round(lrn_rates[1]-lrn_rates[2],3)))
+	Experiment.output_contrast_data(results[1],
+									"../results/contrast_test_trials_" +\
+									str(round(lrn_rates[1]-lrn_rates[2],3)))
 	if verbose:
 		t = time.gmtime(time.time() - t)
-		print("Runs finished in", time.strftime("%H:%M:%S",t))
-	return results
+		print("Run finished in", time.strftime("%H:%M:%S",t))
 
 def main():
 	total = time.time()
 	warnings.filterwarnings("ignore")
-	# Run Category experiment
-	e = Experiment((8,10,10), .1, (.1,.12,.08), 48, 1000, 100, 1e-3, 19/24)
-	results = e.run_experiment()
-	Experiment.output_fam_data(results[0], "../results/familiarisation")
-	Experiment.output_contrast_data(results[1], "../results/contrast_test_trials")
+	# Run experiment
+	results = {}
+	for low_salience_rate in range(5, 50, 5):
+		results[low_salience_rate] = run_subjects((.05, .05, low_salience_rate/1000))
 	total = time.gmtime(time.time() - total)
 	print("="*27,
 		  "Total run time:",
 		  time.strftime("%H:%M:%S",total),
 		  "="*27)
-	return results
 
 if __name__ == "__main__":
-	fam_results, contrast_results = main()
+	main()

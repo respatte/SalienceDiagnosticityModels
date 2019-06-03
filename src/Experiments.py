@@ -58,7 +58,7 @@ class Experiment(object):
 		self.h_ratio = h_ratio
 		# Learning rates and momentum
 		self.lrn_rates = lrn_rates
-		self.momentum = .05
+		self.momentum = .0025
 		# Get meaningful short variables from input
 		# l_ -> label_
 		# h_ -> head_
@@ -168,7 +168,7 @@ class Experiment(object):
 			raise(NotImplementedError)
 		return exemplars[1:] # Return all exemplars but first (prototype)
 	
-	def run_subject(self, subject_i, method):
+	def run_subject(self, subject_i):
 		"""Run familiarisation for a single subject."""
 		# Code s_type (subject type) on 2 bits:
 		# 	- condition (0=no-label, 1=label)
@@ -186,7 +186,7 @@ class Experiment(object):
 		# Return results
 		return fam_results, contrast_results
 		
-	def run_experiment(self, method=None):
+	def run_experiment(self):
 		"""Run a full experiment.
 		
 		Return a tuple of results for familiarisation and training. Results
@@ -204,7 +204,7 @@ class Experiment(object):
 		with Pool() as pool:
 			for subject_i in range(self.n_subjects):
 				results_async[subject_i] = pool.apply_async(self.run_subject,
-															(subject_i, method))
+															[subject_i])
 			pool.close()
 			pool.join()
 		fam_results = {}
