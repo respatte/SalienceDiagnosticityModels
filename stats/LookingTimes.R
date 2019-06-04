@@ -14,6 +14,7 @@ source("geom_flat_violin.R")
 
 # GATHER DATA ======================================================================================
 fam_errors <- read.fam_errors()
+contrast_trials <- read.contrast_trials()
 
 # FAMILIARISATION ERRORS ===========================================================================
 save_path <- "../results/FamErrors/"
@@ -33,3 +34,5 @@ ggsave(paste0(save_path, "Global_data.pdf"),
        fam_errors.plot,
        width = 7, height = 7.5,
        dpi = 600)
+
+# CONTRAST TRIALS ==================================================================================
