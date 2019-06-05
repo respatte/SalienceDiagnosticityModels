@@ -331,7 +331,7 @@ class Experiment(object):
 						   str(feature),
 						   str(data[subject][contrast_type][feature])
 						   ]
-				rows_LT.append(','.join(row))
+					rows_LT.append(','.join(row))
 		# Join all rows with line breaks
 		data_LT = '\n'.join(rows_LT)
 		# Write str results into two files with meaningful extensions
