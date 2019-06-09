@@ -5,9 +5,11 @@ read.fam_errors <- function(){
   filenames <- list.files(path=res.repo, pattern="errors.csv")
   df <- lapply(seq_along(filenames),
                function(i){
+                 s_ratio <- strsplit(filenames[i], "_")[[1]][2] %>%
+                   as.numeric()/10
                  tmp <- read_csv(paste0(res.repo, filenames[i])) %>%
                    mutate(subject = subject + (i-1)*48,
-                          salience_diff = strsplit(filenames[i], "_")[[1]][2])
+                          salience_ratio = s_ratio)
                  return(tmp)
                }) %>%
     bind_rows()

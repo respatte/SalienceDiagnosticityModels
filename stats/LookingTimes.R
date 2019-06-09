@@ -19,20 +19,46 @@ contrast_trials <- read.contrast_trials()
 # FAMILIARISATION ERRORS ===========================================================================
 save_path <- "../results/FamErrors/"
 
-fam_errors.plot <- ggplot(fam_errors,
-                          aes(x = block,
-                              y = error,
-                              colour = condition,
-                              fill = condition)) +
+# Plot for label condition by error_type and salience_ratio
+label_errors.plot <- fam_errors %>%
+  subset(condition == "label" & error_type != "label") %>%
+  mutate_at("salience_ratio", as.character) %>%
+  mutate_at("salience_ratio", parse_factor) %>%
+  ggplot(aes(x = block,
+             y = error,
+             colour = salience_ratio,
+             fill = salience_ratio)) +
   xlab('Block') + ylab("Network error") + theme_bw() + theme(legend.position = "top") +
-  facet_wrap(~salience_diff) + coord_trans(y="log") +
+  facet_wrap(~error_type) + coord_trans(y="log") +
+  stat_summary(fun.y='mean', geom='line', linetype = '61') +
+  stat_summary(fun.data=mean_se, geom='ribbon', alpha= .25, colour=NA) +
+  scale_color_brewer(palette = "YlGn") +
+  scale_fill_brewer(palette = "YlGn")
+ggsave(paste0(save_path, "Label_SalienceRatios_data.pdf"),
+       label_errors.plot,
+       width = 7, height = 3.5,
+       dpi = 600)
+
+# Plot for small/medium/high salience difference ratios by condition and error_type
+fam_errors.plot <- fam_errors %>%
+  subset(error_type != "label") %>%
+  mutate_at("salience_ratio", as.character) %>%
+  mutate_at("salience_ratio", parse_factor) %>%
+  subset(salience_ratio %in% c("0.2", "0.5", "0.8")) %>%
+  droplevels() %>%
+  ggplot(aes(x = block,
+             y = error,
+             colour = condition,
+             fill = condition)) +
+  xlab('Block') + ylab("Network error") + theme_bw() + theme(legend.position = "top") +
+  facet_grid(error_type~salience_ratio) + coord_trans(y="log") +
   stat_summary(fun.y='mean', geom='line', linetype = '61') +
   stat_summary(fun.data=mean_se, geom='ribbon', alpha= .25, colour=NA) +
   scale_color_brewer(palette = "Dark2") +
   scale_fill_brewer(palette = "Dark2")
 ggsave(paste0(save_path, "Global_data.pdf"),
        fam_errors.plot,
-       width = 7, height = 7.5,
+       width = 7, height = 5,
        dpi = 600)
 
 # CONTRAST TRIALS ==================================================================================
