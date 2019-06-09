@@ -50,9 +50,11 @@ contrast_trials.plots <- contrast_trials %>%
                     y = novelty_pref,
                     colour = condition,
                     fill = condition)) +
-      theme_bw() + ylab("Looking to New Feature (Prop)") + ylim(0,1) +
+      theme_bw() +
+      ylab(paste0("Prop Looking to New Feature, salience difference: ", first(df$salience_diff))) +
+      ylim(0,1) +
       geom_hline(yintercept = .5, colour = "black", linetype = 2) +
-      theme(legend.position = "top",
+      theme(legend.position = "none",
             axis.title.y = element_blank(),
             axis.ticks.y = element_blank(),
             axis.text.y = element_blank()) +
@@ -67,6 +69,6 @@ contrast_trials.plots <- contrast_trials %>%
       scale_color_brewer(palette = "Dark2") +
       scale_fill_brewer(palette = "Dark2")
     ggsave(paste0(save_path, "SalienceDiff", first(df$salience_diff),"_data.pdf"), p,
-           width = 5.5, height = 3, dpi = 600)
+           width = 5.5, height = 2.5, dpi = 600)
     return(p)
   })
