@@ -236,21 +236,25 @@ class Experiment(object):
 		c_labels_LT = ','.join(["subject",
 								"condition",
 								"block",
+								"error_type",
 								"error"])
 		rows_LT = [c_labels_LT]
 		# Prepare meaningful coding for parameters
 		condition = ("no_label", "label")
+		error_types = ("label", "salient", "non_salient")
 		for subject in data:
 			# Extract information from subject number
 			s_type = format(subject%4,'02b')
 			for block in data[subject][0]:
-				# Create row for looking time results
-				row = [str(subject),
-					   condition[int(s_type[0])],
-					   str(block),
-					   str(data[subject][0][block])
-					   ]
-				rows_LT.append(','.join(row))
+				for e in range(3):
+					# Create row for looking time results
+					row = [str(subject),
+						   condition[int(s_type[0])],
+						   str(block),
+						   str(error_types[e]),
+						   str(data[subject][0][block][e])
+						   ]
+					rows_LT.append(','.join(row))
 		# Join all rows with line breaks
 		data_LT = '\n'.join(rows_LT)
 		# Write str results into two files with meaningful extensions

@@ -62,6 +62,9 @@ class Subject(object):
 		# Initialise outputs
 		h_reps = {}
 		errors = {}
+		# Indices for errors for groups of units
+		i_label = self.net.n_label
+		i_salient = self.net.n_label + self.net.n_salient
 		# Get number of stimuli
 		n_stims = len(stims[0])
 		# Shuffle stims indices from each category
@@ -70,7 +73,9 @@ class Subject(object):
 		np.random.shuffle(stims_i[1])
 		for step in range(n_steps):
 			block_h_reps = {}
-			block_errors = []
+			label_errors = []
+			salient_errors = []
+			non_salient_errors = []
 			for stim in range(n_stims):
 				for cat in range(2):
 					# Train the network on an exemplar from each category
@@ -80,11 +85,15 @@ class Subject(object):
 						stim_type = str(cat) + str(stims_i[cat][stim])
 						block_h_reps[stim_type] = self.net.neurons[1]
 						# Save error
-						block_errors.append(np.linalg.norm(self.net.error))
+						label_errors.append(np.linalg.norm(self.net.error[0, :i_label]))
+						salient_errors.append(np.linalg.norm(self.net.error[0, i_label:i_salient]))
+						non_salient_errors.append(np.linalg.norm(self.net.error[0, i_salient:]))
 			if not (1+step) % rec_epoch or step==n_steps-1:
 				# Save hidden representations and errors
 				h_reps[1+step] = block_h_reps
-				errors[1+step] = np.mean(block_errors)
+				errors[1+step] = [np.mean(label_errors),
+								  np.mean(salient_errors),
+								  np.mean(non_salient_errors)]
 		return errors, h_reps
 	
 	def contrast_test(self, contrast_stims, pres_time, threshold):

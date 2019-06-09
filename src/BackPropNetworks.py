@@ -71,6 +71,8 @@ class BackPropNetwork(object):
 		
 		"""
 		self.error = None
+		self.n_label = n_label
+		self.n_salient = n_salient
 		self.n_layers = len(n_neurons)
 		# Setting up neuron layers
 		self.neurons = [np.zeros((1, n_neurons[i]))
