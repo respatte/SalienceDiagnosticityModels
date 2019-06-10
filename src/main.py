@@ -11,12 +11,12 @@ def run_subjects(lrn_rates, ratio, verbose=True):
 		t = time.time()
 		print("=" * 50)
 		print("Starting run for lrn_rates =", lrn_rates)
-	e = Experiment((8,10,10), .1, lrn_rates, 48, 10000, 200, 1e-3, 10/28)
+	e = Experiment((8,10,10), .1, lrn_rates, 48, 20000, 200, 1e-3, 6/28)
 	results = e.run_experiment()
 	Experiment.output_fam_data(results[0],
-							   "../results/familiarisation_" + ratio)
+							   "../results/data/familiarisation_" + ratio)
 	Experiment.output_contrast_data(results[1],
-									"../results/contrast_test_trials_" + ratio)
+									"../results/data/contrast_test_trials_" + ratio)
 	if verbose:
 		t = time.gmtime(time.time() - t)
 		print("Run finished in", time.strftime("%H:%M:%S",t))
