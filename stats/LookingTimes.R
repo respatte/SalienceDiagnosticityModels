@@ -19,27 +19,8 @@ contrast_trials <- read.contrast_trials()
 # FAMILIARISATION ERRORS ===========================================================================
 save_path <- "../results/FamErrors/"
 
-# Plot for label condition by error_type and salience_ratio
-label_errors.plot <- fam_errors %>%
-  subset(condition == "label" & error_type != "label") %>%
-  mutate_at("salience_ratio", as.character) %>%
-  mutate_at("salience_ratio", parse_factor) %>%
-  ggplot(aes(x = block,
-             y = error,
-             colour = salience_ratio,
-             fill = salience_ratio)) +
-  xlab('Block') + ylab("Network error") + theme_bw() + theme(legend.position = "top") +
-  facet_wrap(~error_type) + coord_trans(y="log") +
-  stat_summary(fun.y='mean', geom='line', linetype = '61') +
-  stat_summary(fun.data=mean_se, geom='ribbon', alpha= .25, colour=NA) +
-  scale_color_brewer(palette = "YlGn") +
-  scale_fill_brewer(palette = "YlGn")
-ggsave(paste0(save_path, "Label_SalienceRatios_data.pdf"),
-       label_errors.plot,
-       width = 7, height = 3.5,
-       dpi = 600)
-
 # Plot for small/medium/high salience difference ratios by condition and error_type
+error_type_labels <- c(non_salient = "Tail (diagnostic)", salient = "Head (salient)")
 fam_errors.plot <- fam_errors %>%
   subset(error_type != "label") %>%
   mutate_at("salience_ratio", as.character) %>%
@@ -51,7 +32,9 @@ fam_errors.plot <- fam_errors %>%
              colour = condition,
              fill = condition)) +
   xlab('Block') + ylab("Network error") + theme_bw() + theme(legend.position = "top") +
-  facet_grid(error_type~salience_ratio) + coord_trans(y="log") +
+  facet_grid(error_type~salience_ratio,
+             labeller = labeller(error_type = error_type_labels)) +
+  coord_trans(y="log") +
   stat_summary(fun.y='mean', geom='line', linetype = '61') +
   stat_summary(fun.data=mean_se, geom='ribbon', alpha= .25, colour=NA) +
   scale_color_brewer(palette = "Dark2") +
