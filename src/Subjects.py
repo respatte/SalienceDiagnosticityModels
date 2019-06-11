@@ -80,7 +80,7 @@ class Subject(object):
 				for cat in range(2):
 					# Train the network on an exemplar from each category
 					self.net.run(stims[cat][stims_i[cat][stim]])
-					if not (1+step) % rec_epoch or step==n_steps-1:
+					if not (1+step) % rec_epoch or step==n_steps-1 or step == 0:
 						# Save hidden representation and stim type
 						stim_type = str(cat) + str(stims_i[cat][stim])
 						block_h_reps[stim_type] = self.net.neurons[1]
@@ -88,7 +88,7 @@ class Subject(object):
 						label_errors.append(np.linalg.norm(self.net.error[0, :i_label]))
 						salient_errors.append(np.linalg.norm(self.net.error[0, i_label:i_salient]))
 						non_salient_errors.append(np.linalg.norm(self.net.error[0, i_salient:]))
-			if not (1+step) % rec_epoch or step==n_steps-1:
+			if not (1+step) % rec_epoch or step==n_steps-1 or step == 0:
 				# Save hidden representations and errors
 				h_reps[1+step] = block_h_reps
 				errors[1+step] = [np.mean(label_errors),

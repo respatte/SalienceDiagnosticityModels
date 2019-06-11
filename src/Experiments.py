@@ -179,7 +179,7 @@ class Experiment(object):
 					self.h_ratio, self.lrn_rates, self.momentum)
 		# Run familiarisation
 		fam_results = s.fam_training(self.fam_stims[int(s_type[0])],
-									 self.n_fam_pres, 100)
+									 self.n_fam_pres, 50)
 		# Run contrast test trials
 		contrast_results = s.contrast_test(self.contrast_stims[int(s_type[1])],
 										   self.test_pres_time, self.threshold)
@@ -268,7 +268,7 @@ class Experiment(object):
 								"block",
 								"stim_type"])
 		# Get dimensions
-		dims = data[0][1][100]["00"].size
+		dims = data[0][1][1]["00"].size
 		dims_labels = ["dim"+str(i) for i in range(dims)]
 		# Generate final column labels
 		rows_HR = [','.join([c_labels_HR] + dims_labels)]
