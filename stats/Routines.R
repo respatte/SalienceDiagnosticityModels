@@ -21,11 +21,11 @@ read.contrast_trials <- function(){
   filenames <- list.files(path=res.repo, pattern="contrast_")
   df <- lapply(seq_along(filenames),
                function(i){
-                 sal_diff <- strsplit(filenames[i], "_")[[1]][4] %>%
-                   substr(1, nchar(.)-4)
+                 s_ratio <- strsplit(filenames[i], "_")[[1]][4] %>%
+                   as.numeric()/10
                  tmp <- read_csv(paste0(res.repo, filenames[i])) %>%
                    mutate(subject = subject + (i-1)*48,
-                          salience_diff = sal_diff)
+                          salience_ratio = s_ratio)
                  return(tmp)
                }) %>%
     bind_rows()
