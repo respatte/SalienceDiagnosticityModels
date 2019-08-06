@@ -39,7 +39,8 @@ hidden_reps.pca.first.plot <- hidden_reps.pca %>%
   ggplot(aes(x = PC1,
              y = PC2,
              colour = tail_type)) +
-  facet_wrap(~salience_ratio) +
+  theme(legend.position = "top") +
+  facet_wrap(~salience_ratio+condition, ncol = 6) +
   geom_point(alpha = .5) +
   scale_colour_brewer(palette = "Dark2")
 
@@ -48,18 +49,23 @@ hidden_reps.pca.last.plot <- hidden_reps.pca %>%
   ggplot(aes(x = PC1,
              y = PC2,
              colour = tail_type)) +
-  facet_wrap(~salience_ratio) +
+  theme(legend.position = "top") +
+  facet_wrap(~salience_ratio+condition, ncol = 6) +
   geom_point(alpha = .5) +
   scale_colour_brewer(palette = "Dark2")
 
 # DISTANCES ========================================================================================
 hidden_reps.distances <- hidden_reps %>%
   group_by(subject, condition, block, tail_type, salience_ratio) %>%
-  summarise(absolute_dist = dist.hidden_reps(list(dim0,dim1,dim2,dim3,dim4,dim5))) %>%
-  spread(tail_type, absolute_dist, sep = ".absolute_dist.") %>%
-  mutate(.between_dist = as.numeric(dist(c(tail_type.absolute_dist.A,
-                                           tail_type.absolute_dist.B))),
-         tail_type.relative_dist.A = tail_type.absolute_dist.A/.between_dist,
-         tail_type.relative_dist.B = tail_type.absolute_dist.B/.between_dist) %>%
-  gather("dist_type", "dist", -c(subject, condition, block, salience_ratio)) %>%
-  separate(dist_type, c(NA, "dist_type", "tail_type"), sep = "\\.", fill = "right")
+  summarise(absolute_dist = dist.hidden_reps(list(dim0,dim1,dim2,dim3,dim4,dim5)),
+            mu_dim0 = mean(dim0),
+            mu_dim1 = mean(dim1),
+            mu_dim2 = mean(dim2),
+            mu_dim3 = mean(dim3),
+            mu_dim4 = mean(dim4),
+            mu_dim5 = mean(dim5)) %>%
+  group_by(subject, condition, block, salience_ratio) %>%
+  mutate(between_dist = dist.hidden_reps(list(mu_dim0,mu_dim1,mu_dim2,mu_dim3,mu_dim4,mu_dim5))) %>%
+  select(-c(mu_dim0,mu_dim1,mu_dim2,mu_dim3,mu_dim4,mu_dim5)) %>%
+  ungroup() %>%
+  mutate(relative_dist = absolute_dist/between_dist)
