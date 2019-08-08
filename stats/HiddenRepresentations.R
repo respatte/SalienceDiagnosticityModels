@@ -18,6 +18,9 @@ source("geom_flat_violin.R")
 hidden_reps <- read.fam_hidden_reps()
 
 # PLOT: PCA ========================================================================================
+save_path <- "../results/HiddenRepsPCA/"
+
+# Prepare data
 hidden_reps.pca <- hidden_reps %>%
   subset(block == 1 | block == 20000) %>%
   mutate(block = parse_factor(ifelse(block == 1, "first", "last"))) %>%
@@ -34,25 +37,44 @@ hidden_reps.pca <- hidden_reps %>%
   }) %>%
   bind_rows()
 
-hidden_reps.pca.first.plot <- hidden_reps.pca %>%
-  subset(block == "first") %>%
-  ggplot(aes(x = PC1,
-             y = PC2,
-             colour = tail_type)) +
-  theme(legend.position = "top") +
-  facet_wrap(~salience_ratio+condition, ncol = 6) +
-  geom_point(alpha = .5) +
-  scale_colour_brewer(palette = "Dark2")
-
-hidden_reps.pca.last.plot <- hidden_reps.pca %>%
-  subset(block == "last") %>%
-  ggplot(aes(x = PC1,
-             y = PC2,
-             colour = tail_type)) +
-  theme(legend.position = "top") +
-  facet_wrap(~salience_ratio+condition, ncol = 6) +
-  geom_point(alpha = .5) +
-  scale_colour_brewer(palette = "Dark2")
+generate_plots <- F
+if(generate_plots){
+  # Plot for first block
+  hidden_reps.pca.first.plot <- hidden_reps.pca %>%
+    subset(block == "first") %>%
+    mutate(salience_ratio = as.factor(as.character(salience_ratio))) %>%
+    subset(salience_ratio %in% c("0.2", "0.5", "0.8")) %>%
+    droplevels() %>%
+    ggplot(aes(x = PC1,
+               y = PC2,
+               colour = tail_type)) +
+    theme(legend.position = "top") +
+    facet_grid(condition~salience_ratio) +
+    geom_point(alpha = .5) +
+    scale_colour_brewer(palette = "Dark2")
+  ggsave(paste0(save_path, "FirstBlock_data.pdf"),
+         hidden_reps.pca.first.plot,
+         width = 7, height = 5,
+         dpi = 600)
+  
+  # Plot for last block
+  hidden_reps.pca.last.plot <- hidden_reps.pca %>%
+    subset(block == "last") %>%
+    mutate(salience_ratio = as.factor(as.character(salience_ratio))) %>%
+    subset(salience_ratio %in% c("0.2", "0.5", "0.8")) %>%
+    droplevels() %>%
+    ggplot(aes(x = PC1,
+               y = PC2,
+               colour = tail_type)) +
+    theme(legend.position = "top") +
+    facet_grid(condition~salience_ratio) +
+    geom_point(alpha = .5) +
+    scale_colour_brewer(palette = "Dark2")
+  ggsave(paste0(save_path, "LastBlock_data.pdf"),
+         hidden_reps.pca.last.plot,
+         width = 7, height = 5,
+         dpi = 600)
+}
 
 # DISTANCES ========================================================================================
 hidden_reps.distances <- hidden_reps %>%
