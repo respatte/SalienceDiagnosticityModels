@@ -77,6 +77,9 @@ if(generate_plots){
 }
 
 # DISTANCES ========================================================================================
+save_path <- "../results/HiddenRepsDist/"
+
+# Prepare data
 hidden_reps.distances <- hidden_reps %>%
   group_by(subject, condition, block, tail_type, salience_ratio) %>%
   summarise(absolute_dist = dist.hidden_reps(list(dim0,dim1,dim2,dim3,dim4,dim5)),
@@ -90,4 +93,23 @@ hidden_reps.distances <- hidden_reps %>%
   mutate(between_dist = dist.hidden_reps(list(mu_dim0,mu_dim1,mu_dim2,mu_dim3,mu_dim4,mu_dim5))) %>%
   select(-c(mu_dim0,mu_dim1,mu_dim2,mu_dim3,mu_dim4,mu_dim5)) %>%
   ungroup() %>%
-  mutate(relative_dist = absolute_dist/between_dist)
+  mutate(relative_dist = absolute_dist/between_dist,
+         z.block = scale(block))
+
+# Run models
+run_models <- F
+if(run_models){
+  ## Run STB model
+  hidden_reps.distances.lmer <- lmer(relative_dist ~ z.block*condition*salience_ratio +
+                                       (1 + z.block | subject),
+                                     data = hidden_reps.distances,
+                                     control = lmerControl(optCtrl = list(maxfun=100000)))
+  hidden_reps.distances.anova <- anova(hidden_reps.distances.lmer, type = "I")
+  ## Save results
+  saveRDS(hidden_reps.distances.lmer, paste0(save_path, "Relative_lmer.rds"))
+  saveRDS(hidden_reps.distances.anova, paste0(save_path, "Relative_anova.rds"))
+}else{
+  ## Read results
+  hidden_reps.distances.lmer <- readRDS(paste0(save_path, "Relative_lmer.rds"))
+  hidden_reps.distances.anova <- readRDS(paste0(save_path, "Relative_anova.rds"))
+}
