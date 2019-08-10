@@ -37,9 +37,10 @@ hidden_reps.pca <- hidden_reps %>%
   }) %>%
   bind_rows()
 
+# Plot data
 generate_plots <- F
 if(generate_plots){
-  # Plot for first block
+  ## Plot for first block
   hidden_reps.pca.first.plot <- hidden_reps.pca %>%
     subset(block == "first") %>%
     mutate(salience_ratio = as.factor(as.character(salience_ratio))) %>%
@@ -57,7 +58,7 @@ if(generate_plots){
          width = 7, height = 5,
          dpi = 600)
   
-  # Plot for last block
+  ## Plot for last block
   hidden_reps.pca.last.plot <- hidden_reps.pca %>%
     subset(block == "last") %>%
     mutate(salience_ratio = as.factor(as.character(salience_ratio))) %>%

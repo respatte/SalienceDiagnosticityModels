@@ -4,23 +4,27 @@ library(future.apply)
 read.fam_errors <- function(){
   res.repo <- "../results/data/"
   filenames <- list.files(path=res.repo, pattern="errors.csv")
-  df <- lapply(seq_along(filenames),
+  df <- future_lapply(seq_along(filenames),
                function(i){
                  s_ratio <- strsplit(filenames[i], "_")[[1]][2] %>%
                    as.numeric()/10
                  tmp <- read_csv(paste0(res.repo, filenames[i])) %>%
-                   mutate(subject = subject + (i-1)*48,
+                   mutate(subject = as.character(subject + (i-1)*48),
                           salience_ratio = s_ratio)
                  return(tmp)
                }) %>%
-    bind_rows()
+    bind_rows() %>%
+    mutate(subject = parse_factor(subject),
+           condition = parse_factor(condition, levels = c("no_label", "label")),
+           error_type = parse_factor(error_type, levels = c("label", "salient", "non_salient")),
+           z.block = scale(block, center = F))
   return(df)
 }
 
 read.contrast_trials <- function(){
   res.repo <- "../results/data/"
   filenames <- list.files(path=res.repo, pattern="contrast_")
-  df <- lapply(seq_along(filenames),
+  df <- future_lapply(seq_along(filenames),
                function(i){
                  s_ratio <- strsplit(filenames[i], "_")[[1]][4] %>%
                    as.numeric()/10
