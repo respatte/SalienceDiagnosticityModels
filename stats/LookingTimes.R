@@ -43,11 +43,12 @@ if(run_models){
   fam_errors.visual.anova <- readRDS(paste0(save_path, "VisualFeatures_anova.rds"))
 }
 
-# Plot data
-generate_plots <- T
+# Plot
+generate_plots <- F
 if(generate_plots){
-  ## Plot for small/medium/high salience difference ratios by condition and error_type
+  ## Prepare labeller
   error_type_labels <- c(non_salient = "Tail (diagnostic)", salient = "Head (salient)")
+  ## Plot for small/medium/high salience difference ratios by condition and error_type
   fam_errors.plot <- fam_errors.visual %>%
     mutate_at("salience_ratio", as.character) %>%
     mutate_at("salience_ratio", parse_factor) %>%
@@ -57,7 +58,9 @@ if(generate_plots){
                y = error,
                colour = condition,
                fill = condition)) +
-    xlab('Block') + ylab("Network error") + theme_bw() + theme(legend.position = "top") +
+    xlab('Block') + ylab("Network error") + theme_bw() +
+    theme(legend.position = "top",
+          axis.text.x = element_text(angle=45, vjust=1, hjust = 1)) +
     facet_grid(error_type~salience_ratio,
                labeller = labeller(error_type = error_type_labels)) +
     scale_x_continuous(trans = log10_trans()) +
@@ -68,8 +71,47 @@ if(generate_plots){
     scale_fill_brewer(palette = "Dark2")
   ggsave(paste0(save_path, "VisualFeatures_data.pdf"),
          fam_errors.plot,
-         width = 7, height = 5,
+         width = 5, height = 3.5,
          dpi = 600)
+  ## Plot Intercept and Slope per condition:error_type:salience_ratio
+  ### Prepare data
+  fam_errors.visual.facet_estimates <- fam_errors.visual %>%
+    select(-c(error)) %>%
+    subset(salience_ratio %in% c(.2, .5, .8)) %>%
+    mutate(error_pred = predict(fam_errors.visual.lmer,
+                                newdata = .),
+           salience_ratio = as_factor(salience_ratio)) %>%
+    split(list(.$condition, .$error_type, .$salience_ratio)) %>%
+    future_lapply(function(df){
+      m <- lm(error_pred ~ z.block, data = df)
+      t <- m %>%
+        confint() %>%
+        as_tibble(rownames = "parameter") %>%
+        mutate(estimate = m$coefficients,
+               condition = first(df$condition),
+               error_type = first(df$error_type),
+               salience_ratio = first(df$salience_ratio)) %>%
+        return()
+    }) %>%
+    bind_rows()
+  ### Plot data
+  fam_errors.visual.facet_estimates.plot <- fam_errors.visual.facet_estimates %>%
+    ggplot(aes(x = error_type,
+               y = estimate,
+               ymin = `2.5 %`,
+               ymax = `97.5 %`,
+               colour = condition,
+               fill = condition)) +
+    ylab("Parameter Estimate") + theme_bw() + coord_flip() +
+    facet_grid(rows = vars(salience_ratio),
+               cols = vars(parameter),
+               scales = "free") +
+    theme(legend.position = "top",
+          axis.title.y = element_blank()) +
+    geom_pointrange(fatten = 1, position = position_dodge(width = .3)) +
+    scale_x_discrete(breaks = c("salient", "non_salient"),
+                     labels = c("Head (salient)", "Tail (diagnostic)")) +
+    scale_colour_brewer(palette = "Dark2")
 }
 
 # CONTRAST TRIALS ==================================================================================
