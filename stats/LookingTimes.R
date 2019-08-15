@@ -49,7 +49,7 @@ if(generate_plots){
   ## Prepare labeller
   error_type_labels <- c(non_salient = "Tail (diagnostic)", salient = "Head (salient)")
   ## Plot for small/medium/high salience difference ratios by condition and error_type
-  fam_errors.plot <- fam_errors.visual %>%
+  fam_errors.visual.plot <- fam_errors.visual %>%
     mutate_at("salience_ratio", as.character) %>%
     mutate_at("salience_ratio", parse_factor) %>%
     subset(salience_ratio %in% c("0.2", "0.5", "0.8")) %>%
@@ -70,7 +70,7 @@ if(generate_plots){
     scale_color_brewer(palette = "Dark2") +
     scale_fill_brewer(palette = "Dark2")
   ggsave(paste0(save_path, "VisualFeatures_data.pdf"),
-         fam_errors.plot,
+         fam_errors.visual.plot,
          width = 5, height = 3.5,
          dpi = 600)
   ## Plot Intercept and Slope per condition:error_type:salience_ratio
@@ -95,6 +95,7 @@ if(generate_plots){
     }) %>%
     bind_rows()
   ### Plot data
+  ### TODO: find out how ggeffects computes marginal effects per facet
   fam_errors.visual.facet_estimates.plot <- fam_errors.visual.facet_estimates %>%
     ggplot(aes(x = error_type,
                y = estimate,
@@ -108,10 +109,16 @@ if(generate_plots){
                scales = "free") +
     theme(legend.position = "top",
           axis.title.y = element_blank()) +
-    geom_pointrange(fatten = 1, position = position_dodge(width = .3)) +
+    #geom_pointrange(fatten = 1, position = position_dodge(width = .3)) +
+    geom_errorbar(width = .1, size = .5, position = position_dodge(width = .3)) +
+    geom_point(shape = 4, position = position_dodge(width = .3)) +
     scale_x_discrete(breaks = c("salient", "non_salient"),
                      labels = c("Head (salient)", "Tail (diagnostic)")) +
     scale_colour_brewer(palette = "Dark2")
+  ggsave(paste0(save_path, "VisualFeatures_parameters.pdf"),
+         fam_errors.visual.facet_estimates.plot,
+         width = 3.5, height = 5,
+         dpi = 600)
 }
 
 # CONTRAST TRIALS ==================================================================================
