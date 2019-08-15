@@ -67,7 +67,7 @@ if(generate_plots){
     scale_y_continuous(trans = log10_trans()) +
     stat_summary(fun.y='mean', geom='line', linetype = '61') +
     stat_summary(fun.data=mean_se, geom='ribbon', alpha= .25, colour=NA) +
-    scale_color_brewer(palette = "Dark2") +
+    scale_colour_brewer(palette = "Dark2") +
     scale_fill_brewer(palette = "Dark2")
   ggsave(paste0(save_path, "VisualFeatures_data.pdf"),
          fam_errors.visual.plot,
@@ -117,7 +117,7 @@ if(generate_plots){
     scale_colour_brewer(palette = "Dark2")
   ggsave(paste0(save_path, "VisualFeatures_parameters.pdf"),
          fam_errors.visual.facet_estimates.plot,
-         width = 3.5, height = 5,
+         width = 5, height = 5,
          dpi = 600)
 }
 

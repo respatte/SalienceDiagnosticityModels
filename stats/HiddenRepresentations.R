@@ -114,3 +114,32 @@ if(run_models){
   hidden_reps.distances.lmer <- readRDS(paste0(save_path, "Relative_lmer.rds"))
   hidden_reps.distances.anova <- readRDS(paste0(save_path, "Relative_anova.rds"))
 }
+
+# Plot
+generate_plots <- T
+if(generate_plots){
+  ## Plot for small/medium/high salience difference ratios by condition
+  hidden_reps.distances.plot <- hidden_reps.distances %>%
+    mutate_at("salience_ratio", as.character) %>%
+    mutate_at("salience_ratio", parse_factor) %>%
+    subset(salience_ratio %in% c("0.2", "0.5", "0.8")) %>%
+    droplevels() %>%
+    ggplot(aes(x = block,
+               y = relative_dist,
+               colour = condition,
+               fill = condition)) +
+    xlab('Block') + ylab("Relative Distance") + theme_bw() +
+    theme(legend.position = "top",
+          axis.text.x = element_text(angle=45, vjust=1, hjust = 1)) +
+    facet_grid(rows = vars(salience_ratio)) +
+    scale_x_continuous(trans = log10_trans()) +
+    scale_y_continuous(trans = log10_trans()) +
+    stat_summary(fun.y='mean', geom='line', linetype = '61') +
+    stat_summary(fun.data=mean_se, geom='ribbon', alpha= .25, colour=NA) +
+    scale_colour_brewer(palette = "Dark2") +
+    scale_fill_brewer(palette = "Dark2")
+  ggsave(paste0(save_path, "Relative_data.pdf"),
+         hidden_reps.distances.plot,
+         width = 5, height = 5,
+         dpi = 600)
+}
