@@ -75,7 +75,7 @@ if(generate_plots){
          fam_errors.visual.plot,
          width = 5, height = 3.5,
          dpi = 600)
-  ## Plot Intercept and Slope per condition:error_type:salience_ratio
+  ## Plot marginal effects per condition:error_type:salience_ratio
   ### Prepare data
   fam_errors.visual.marginal_effects <- fam_errors.visual.lmer %>%
     ggpredict(terms = c("z.block",

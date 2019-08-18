@@ -6,6 +6,7 @@ library(brms)
 library(coda)
 library(modeest)
 library(tidyverse)
+library(ggeffects)
 library(sjPlot)
 library(RColorBrewer)
 library(future.apply)
@@ -140,6 +141,41 @@ if(generate_plots){
     scale_fill_brewer(palette = "Dark2")
   ggsave(paste0(save_path, "Relative_data.pdf"),
          hidden_reps.distances.plot,
+         width = 5, height = 5,
+         dpi = 600)
+  ## Plot marginal effects per condition:error_type:salience_ratio
+  ### Prepare data
+  hidden_reps.distances.marginal_effects <- hidden_reps.distances.lmer %>%
+    ggpredict(terms = c("z.block",
+                        "condition",
+                        "salience_ratio [.2, .5, .8]"),
+              type = "fe") %>%
+    rename(z.block = x,
+           condition = group,
+           salience_ratio = facet)
+  ### Plot data
+  hidden_reps.distances.marginal_effects.plot <- hidden_reps.distances.marginal_effects %>%
+    ggplot(aes(x = z.block,
+               y = predicted,
+               ymin = conf.low,
+               ymax = conf.high,
+               colour = condition,
+               fill = condition)) +
+    ylab("Relative Distance") + xlab("Scaled Block") + theme_bw() +
+    facet_grid(rows = vars(salience_ratio)) +
+    theme(legend.position = "top",
+          axis.ticks.x = element_blank(),
+          axis.text.x = element_blank()) +
+    geom_line(size = .3) +
+    geom_ribbon(alpha = .5, colour = NA) +
+    scale_colour_brewer(palette = "Dark2",
+                        name = "Condition",
+                        labels = c("no-label", "label")) +
+    scale_fill_brewer(palette = "Dark2",
+                      name = "Condition",
+                      labels = c("no-label", "label"))
+  ggsave(paste0(save_path, "Relative_MarginalEffects.pdf"),
+         hidden_reps.distances.marginal_effects.plot,
          width = 5, height = 5,
          dpi = 600)
 }
