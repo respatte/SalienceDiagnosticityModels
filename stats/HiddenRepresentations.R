@@ -116,7 +116,7 @@ if(run_models){
 }
 
 # Plot
-generate_plots <- T
+generate_plots <- F
 if(generate_plots){
   ## Plot for small/medium/high salience difference ratios by condition
   hidden_reps.distances.plot <- hidden_reps.distances %>%
