@@ -137,8 +137,12 @@ if(generate_plots){
     scale_y_continuous(trans = log10_trans()) +
     stat_summary(fun.y='mean', geom='line', linetype = '61') +
     stat_summary(fun.data=mean_se, geom='ribbon', alpha= .25, colour=NA) +
-    scale_colour_brewer(palette = "Dark2") +
-    scale_fill_brewer(palette = "Dark2")
+    scale_colour_brewer(palette = "Dark2",
+                        name = "Condition",
+                        labels = c("no-label", "label")) +
+    scale_fill_brewer(palette = "Dark2",
+                      name = "Condition",
+                      labels = c("no-label", "label"))
   ggsave(paste0(save_path, "Relative_data.pdf"),
          hidden_reps.distances.plot,
          width = 5, height = 5,
