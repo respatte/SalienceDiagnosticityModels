@@ -39,7 +39,7 @@ hidden_reps.pca <- hidden_reps %>%
   bind_rows()
 
 # Plot data
-generate_plots <- T
+generate_plots <- F
 if(generate_plots){
   condition_labels <- c(no_label = "no-label", label = "label")
   ## Plot for first block
@@ -61,7 +61,7 @@ if(generate_plots){
                         name = "Tail Type")
   ggsave(paste0(save_path, "FirstBlock_data.pdf"),
          hidden_reps.pca.first.plot,
-         width = 7, height = 5,
+         width = 5, height = 3.5,
          dpi = 600)
   
   ## Plot for last block
@@ -83,7 +83,7 @@ if(generate_plots){
                         name = "Tail Type")
   ggsave(paste0(save_path, "LastBlock_data.pdf"),
          hidden_reps.pca.last.plot,
-         width = 7, height = 5,
+         width = 5, height = 3.5,
          dpi = 600)
 }
 
