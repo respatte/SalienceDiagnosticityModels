@@ -24,7 +24,7 @@ save_path <- "../results/HiddenRepsPCA/"
 # Prepare data
 hidden_reps.pca <- hidden_reps %>%
   subset(block == 1 | block == 20000) %>%
-  mutate(block = parse_factor(ifelse(block == 1, "first", "last"))) %>%
+  mutate(block = parse_factor(ifelse(block == 1, "First", "Last"))) %>%
   split(list(.$subject,.$block)) %>%
   future_lapply(function(df){
     A <- which(df$tail_type == "A")
@@ -39,21 +39,26 @@ hidden_reps.pca <- hidden_reps %>%
   bind_rows()
 
 # Plot data
-generate_plots <- F
+generate_plots <- T
 if(generate_plots){
+  condition_labels <- c(no_label = "no-label", label = "label")
   ## Plot for first block
   hidden_reps.pca.first.plot <- hidden_reps.pca %>%
-    subset(block == "first") %>%
-    mutate(salience_ratio = as.factor(as.character(salience_ratio))) %>%
+    subset(block == "First") %>%
+    mutate(salience_ratio = as_factor(salience_ratio)) %>%
     subset(salience_ratio %in% c("0.2", "0.5", "0.8")) %>%
     droplevels() %>%
     ggplot(aes(x = PC1,
                y = PC2,
                colour = tail_type)) +
+    theme_bw() +
     theme(legend.position = "top") +
-    facet_grid(condition~salience_ratio) +
-    geom_point(alpha = .5) +
-    scale_colour_brewer(palette = "Dark2")
+    facet_grid(rows = vars(condition),
+               cols = vars(salience_ratio),
+               labeller = labeller(condition = condition_labels)) +
+    geom_jitter(alpha = .5) +
+    scale_colour_brewer(palette = "Dark2",
+                        name = "Tail Type")
   ggsave(paste0(save_path, "FirstBlock_data.pdf"),
          hidden_reps.pca.first.plot,
          width = 7, height = 5,
@@ -61,17 +66,21 @@ if(generate_plots){
   
   ## Plot for last block
   hidden_reps.pca.last.plot <- hidden_reps.pca %>%
-    subset(block == "last") %>%
+    subset(block == "Last") %>%
     mutate(salience_ratio = as.factor(as.character(salience_ratio))) %>%
     subset(salience_ratio %in% c("0.2", "0.5", "0.8")) %>%
     droplevels() %>%
     ggplot(aes(x = PC1,
                y = PC2,
                colour = tail_type)) +
+    theme_bw() +
     theme(legend.position = "top") +
-    facet_grid(condition~salience_ratio) +
-    geom_point(alpha = .5) +
-    scale_colour_brewer(palette = "Dark2")
+    facet_grid(rows = vars(condition),
+               cols = vars(salience_ratio),
+               labeller = labeller(condition = condition_labels)) +
+    geom_jitter(alpha = .5) +
+    scale_colour_brewer(palette = "Dark2",
+                        name = "Tail Type")
   ggsave(paste0(save_path, "LastBlock_data.pdf"),
          hidden_reps.pca.last.plot,
          width = 7, height = 5,
