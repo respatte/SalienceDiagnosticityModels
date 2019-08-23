@@ -9,6 +9,7 @@ library(tidyverse)
 library(ggeffects)
 library(sjPlot)
 library(RColorBrewer)
+library(scales)
 library(future.apply)
 plan(multiprocess)
 
@@ -74,16 +75,15 @@ if(generate_plots){
                y = PC2,
                colour = tail_type)) +
     theme_bw() +
-    theme(legend.position = "top") +
     facet_grid(rows = vars(condition),
                cols = vars(salience_ratio),
                labeller = labeller(condition = condition_labels)) +
     geom_jitter(alpha = .5) +
     scale_colour_brewer(palette = "Dark2",
-                        name = "Tail Type")
+                        guide = F)
   ggsave(paste0(save_path, "LastBlock_data.pdf"),
          hidden_reps.pca.last.plot,
-         width = 5, height = 3.5,
+         width = 5, height = 3,
          dpi = 600)
 }
 
@@ -141,7 +141,7 @@ if(generate_plots){
     xlab('Block') + ylab("Relative Distance") + theme_bw() +
     theme(legend.position = "top",
           axis.text.x = element_text(angle=45, vjust=1, hjust = 1)) +
-    facet_grid(rows = vars(salience_ratio)) +
+    facet_grid(cols = vars(salience_ratio)) +
     scale_x_continuous(trans = log10_trans()) +
     scale_y_continuous(trans = log10_trans()) +
     stat_summary(fun.y='mean', geom='line', linetype = '61') +
@@ -154,7 +154,7 @@ if(generate_plots){
                       labels = c("no-label", "label"))
   ggsave(paste0(save_path, "Relative_data.pdf"),
          hidden_reps.distances.plot,
-         width = 5, height = 5,
+         width = 5, height = 2.7,
          dpi = 600)
   ## Plot marginal effects per condition:error_type:salience_ratio
   ### Prepare data
@@ -175,7 +175,7 @@ if(generate_plots){
                colour = condition,
                fill = condition)) +
     ylab("Relative Distance") + xlab("Scaled Block") + theme_bw() +
-    facet_grid(rows = vars(salience_ratio)) +
+    facet_grid(cols = vars(salience_ratio)) +
     theme(legend.position = "top",
           axis.ticks.x = element_blank(),
           axis.text.x = element_blank()) +
@@ -189,6 +189,6 @@ if(generate_plots){
                       labels = c("no-label", "label"))
   ggsave(paste0(save_path, "Relative_MarginalEffects.pdf"),
          hidden_reps.distances.marginal_effects.plot,
-         width = 5, height = 5,
+         width = 5, height = 2.5,
          dpi = 600)
 }
