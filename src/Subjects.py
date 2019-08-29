@@ -107,7 +107,6 @@ class Subject(object):
 				time_left = pres_time
 				error = 1
 				while time_left > 0 and error > threshold:
-					# Goal specification necessarry for CR models
 					self.net.run(contrast_stims[feature][old_new])
 					error = np.linalg.norm(self.net.error)
 					time_left -= 1
