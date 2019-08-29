@@ -26,14 +26,18 @@ read.contrast_trials <- function(){
   filenames <- list.files(path=res.repo, pattern="contrast_")
   df <- future_lapply(seq_along(filenames),
                function(i){
-                 s_ratio <- strsplit(filenames[i], "_")[[1]][4] %>%
+                 s_ratio <- strsplit(filenames[i], "[_\\.]")[[1]][4] %>%
                    as.numeric()/10
                  tmp <- read_csv(paste0(res.repo, filenames[i])) %>%
                    mutate(subject = subject + (i-1)*48,
                           salience_ratio = s_ratio)
                  return(tmp)
                }) %>%
-    bind_rows()
+    bind_rows() %>%
+    mutate(subject = as_factor(subject),
+           condition = parse_factor(condition, levels = c("no_label", "label")),
+           contrast_type = parse_factor(contrast_type, levels = c("Head", "Tail")),
+           feature = as_factor(feature))
   return(df)
 }
 
