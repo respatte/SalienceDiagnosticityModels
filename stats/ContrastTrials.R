@@ -65,17 +65,17 @@ if(generate_plots){
     subset(salience_ratio %in% c(.2, .5, .8)) %>%
     mutate(salience_ratio = as_factor(salience_ratio)) %>%
     ggplot(aes(x = condition,
-               y = sin(novelty_pref)^2,
+               y = sin(novelty_pref + chance)^2 - .5, # Decentre, transform back, recentre
                colour = condition,
                fill = condition)) +
     theme_bw() +
-    ylab("Prop Looking to New Feature") + #ylim(0,1) +
+    ylab("Prop Looking to New Feature") +
     geom_hline(yintercept = 0, colour = "black", linetype = 2) +
     theme(legend.position = "top",
           axis.title.y = element_blank(),
           axis.ticks.y = element_blank(),
           axis.text.y = element_blank(),
-          axis.text.x = element_text(angle=45, vjust=1, hjust=1)) +
+          axis.text.x = element_text(angle=45, vjust=1, hjust=.9)) +
     coord_flip() +
     facet_grid(rows = vars(contrast_type),
                cols = vars(salience_ratio),
@@ -87,7 +87,7 @@ if(generate_plots){
                show.legend = F) +
     geom_boxplot(width = .1, alpha = .3, outlier.shape = NA, colour = "black",
                  show.legend = F) +
-    scale_y_continuous(breaks = c(0.50,0.51)) +
+    #scale_y_continuous(breaks = c(0.50,0.51)) +
     scale_color_brewer(palette = "Dark2",
                        name = "Condition",
                        labels = c("no-label", "label")) +

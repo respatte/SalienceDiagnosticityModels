@@ -40,7 +40,7 @@ hidden_reps.pca <- hidden_reps %>%
   bind_rows()
 
 # Plot data
-generate_plots <- T
+generate_plots <- F
 if(generate_plots){
   condition_labels <- c(no_label = "no-label", label = "label")
   ## Plot for first block
@@ -108,7 +108,7 @@ hidden_reps.distances <- hidden_reps %>%
          z.block = scale(block))
 
 # Run models
-run_models <- T
+run_models <- F
 if(run_models){
   ## Run STB model
   hidden_reps.distances.lmer <- lmer(relative_dist ~ z.block*condition*salience_ratio +
@@ -126,7 +126,7 @@ if(run_models){
 }
 
 # Plot
-generate_plots <- T
+generate_plots <- F
 if(generate_plots){
   ## Plot for small/medium/high salience difference ratios by condition
   hidden_reps.distances.plot <- hidden_reps.distances %>%
