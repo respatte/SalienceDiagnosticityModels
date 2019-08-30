@@ -21,9 +21,10 @@ contrast_trials <- read.contrast_trials()
 save_path <- "../results/ContrastTrials/"
 
 # Prepare data
+chance <- asin(sqrt(.5))
 contrast_trials.old_new <- contrast_trials %>%
   spread(feature, looking_time) %>%
-  mutate(novelty_pref = (New / (Old + New)) %>% sqrt() %>% asin())
+  mutate(novelty_pref = (New / (Old + New)) %>% sqrt() %>% asin() - chance)
 
 # Run models
 run_models <- F
@@ -37,7 +38,12 @@ if(run_models){
                                                terms = c("condition",
                                                          "contrast_type",
                                                          "salience_ratio [all]"),
-                                               type = "fe")
+                                               type = "fe",
+                                               x.as.factor = T) %>%
+    rename(condition = x,
+           contrast_type = group,
+           salience_ratio = facet) %>%
+    mutate(salience_ratio = as.numeric(as.character(salience_ratio)))
   ## Save results
   saveRDS(contrast_trials.old_new.lmer, paste0(save_path, "OldNew_lmer.rds"))
   saveRDS(contrast_trials.old_new.anova, paste0(save_path, "OldNew_anova.rds"))
@@ -64,7 +70,7 @@ if(generate_plots){
                fill = condition)) +
     theme_bw() +
     ylab("Prop Looking to New Feature") + #ylim(0,1) +
-    geom_hline(yintercept = .5, colour = "black", linetype = 2) +
+    geom_hline(yintercept = 0, colour = "black", linetype = 2) +
     theme(legend.position = "top",
           axis.title.y = element_blank(),
           axis.ticks.y = element_blank(),
@@ -91,4 +97,30 @@ if(generate_plots){
   ggsave(paste0(save_path, "OldNew_data.pdf"),
          contrast_trials.old_new.plot,
          width = 5, height = 4, dpi = 600)
+  ## Plot marginal means with CIs
+  contrast_trials.old_new.emmeans.plot <- contrast_trials.old_new.emmeans %>%
+    ggplot(aes(x = salience_ratio,
+               y = predicted,
+               ymin = conf.low,
+               ymax = conf.high,
+               colour = condition,
+               fill = condition)) +
+    theme_bw() + ylab("Prop Looking to New Feature") + xlab("Salience Ratio") +
+    theme(legend.position = "top") +
+    facet_wrap(vars(contrast_type),
+               labeller = labeller(contrast_type = contrast_type_labels)) +
+    geom_ribbon(alpha = .6, colour = NA) +
+    geom_line() +
+    geom_hline(yintercept = 0, colour = "black", linetype = 2, alpha = .5) +
+    scale_colour_brewer(palette = "Dark2",
+                        name = "Condition",
+                        labels = c("no-label", "label")) +
+    scale_fill_brewer(palette = "Dark2",
+                      name = "Condition",
+                      labels = c("no-label", "label")) +
+    scale_x_continuous(breaks = c(.2, .5, .8),
+                       minor_breaks = c(.1, .3, .4, .6, .7, .9))
+  ggsave(paste0(save_path, "OldNew_emmeans.pdf"),
+                contrast_trials.old_new.emmeans.plot,
+                width = 5, height = 3, dpi = 600)
 }

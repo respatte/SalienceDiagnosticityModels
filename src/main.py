@@ -11,7 +11,7 @@ def run_subjects(lrn_rates, ratio, verbose=True):
 		t = time.time()
 		print("=" * 50)
 		print("Starting run for lrn_rates =", lrn_rates)
-	e = Experiment((8,10,10), .1, lrn_rates, 48, 20000, 200, 1e-3, 6/28)
+	e = Experiment((8,10,10), .1, lrn_rates, 48, 20000, 200, 1e-2, 6/28)
 	results = e.run_experiment()
 	Experiment.output_fam_data(results[0],
 							   "../results/data/familiarisation_" + ratio)
