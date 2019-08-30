@@ -15,6 +15,7 @@ plan(multiprocess)
 
 source("Routines.R")
 source("geom_flat_violin.R")
+source("grid_arrange_shared_legend.R")
 
 # GATHER DATA ======================================================================================
 hidden_reps <- read.fam_hidden_reps()
@@ -43,7 +44,7 @@ hidden_reps.pca <- hidden_reps %>%
 generate_plots <- F
 if(generate_plots){
   condition_labels <- c(no_label = "no-label", label = "label")
-  ## Plot for first block
+  ## Prepare plot for first block
   hidden_reps.pca.first.plot <- hidden_reps.pca %>%
     subset(block == "First") %>%
     mutate(salience_ratio = as_factor(salience_ratio)) %>%
@@ -54,18 +55,14 @@ if(generate_plots){
                colour = tail_type)) +
     theme_bw() +
     theme(legend.position = "top") +
-    facet_grid(rows = vars(condition),
-               cols = vars(salience_ratio),
+    facet_grid(rows = vars(salience_ratio),
+               cols = vars(condition),
                labeller = labeller(condition = condition_labels)) +
     geom_jitter(alpha = .5) +
     scale_colour_brewer(palette = "Dark2",
-                        name = "Tail Type")
-  ggsave(paste0(save_path, "FirstBlock_data.pdf"),
-         hidden_reps.pca.first.plot,
-         width = 5, height = 3.5,
-         dpi = 600)
-  
-  ## Plot for last block
+                        name = "Tail Type",
+                        labels = c("A", "B"))
+  ## Prepare plot for last block
   hidden_reps.pca.last.plot <- hidden_reps.pca %>%
     subset(block == "Last") %>%
     mutate(salience_ratio = as.factor(as.character(salience_ratio))) %>%
@@ -75,16 +72,19 @@ if(generate_plots){
                y = PC2,
                colour = tail_type)) +
     theme_bw() +
-    facet_grid(rows = vars(condition),
-               cols = vars(salience_ratio),
+    facet_grid(rows = vars(salience_ratio),
+               cols = vars(condition),
                labeller = labeller(condition = condition_labels)) +
     geom_jitter(alpha = .5) +
     scale_colour_brewer(palette = "Dark2",
-                        guide = F)
-  ggsave(paste0(save_path, "LastBlock_data.pdf"),
-         hidden_reps.pca.last.plot,
-         width = 5, height = 3,
-         dpi = 600)
+                        name = "Tail Type",
+                        labels = c("A", "B"))
+  ## Save double plot layout
+  hidden_reps.pca.global.plot <- grid_arrange_shared_legend(hidden_reps.pca.first.plot,
+                                                            hidden_reps.pca.last.plot)
+  ggsave(paste0(save_path, "FirstLast_data.pdf"),
+         hidden_reps.pca.global.plot,
+         width = 7, height = 5, dpi = 600)
 }
 
 # DISTANCES ========================================================================================
