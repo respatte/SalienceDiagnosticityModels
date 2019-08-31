@@ -53,15 +53,18 @@ if(generate_plots){
     ggplot(aes(x = PC1,
                y = PC2,
                colour = tail_type)) +
-    theme_bw() +
-    theme(legend.position = "top") +
+    theme_bw(base_size = 9) +
+    theme(legend.position = "top",
+          legend.title = element_text(size = 11),
+          legend.text = element_text(size = 10)) +
     facet_grid(rows = vars(salience_ratio),
                cols = vars(condition),
                labeller = labeller(condition = condition_labels)) +
-    geom_jitter(alpha = .5) +
+    geom_jitter(alpha = .2, size = .8) +
     scale_colour_brewer(palette = "Dark2",
                         name = "Tail Type",
-                        labels = c("A", "B"))
+                        labels = c("A", "B")) +
+    guides(colour = guide_legend(override.aes = list(size=3, alpha = 1)))
   ## Prepare plot for last block
   hidden_reps.pca.last.plot <- hidden_reps.pca %>%
     subset(block == "Last") %>%
@@ -71,20 +74,25 @@ if(generate_plots){
     ggplot(aes(x = PC1,
                y = PC2,
                colour = tail_type)) +
-    theme_bw() +
+    theme_bw(base_size = 9) +
+    theme(legend.position = "top",
+          legend.title = element_text(size = 11),
+          legend.text = element_text(size = 10)) +
     facet_grid(rows = vars(salience_ratio),
                cols = vars(condition),
                labeller = labeller(condition = condition_labels)) +
-    geom_jitter(alpha = .5) +
+    geom_jitter(alpha = .2, size = .8) +
     scale_colour_brewer(palette = "Dark2",
                         name = "Tail Type",
-                        labels = c("A", "B"))
+                        labels = c("A", "B")) +
+    guides(colour = guide_legend(override.aes = list(size=3, alpha = 1)))
   ## Save double plot layout
   hidden_reps.pca.global.plot <- grid_arrange_shared_legend(hidden_reps.pca.first.plot,
-                                                            hidden_reps.pca.last.plot)
+                                                            hidden_reps.pca.last.plot,
+                                                            position = "top")
   ggsave(paste0(save_path, "FirstLast_data.pdf"),
          hidden_reps.pca.global.plot,
-         width = 7, height = 5, dpi = 600)
+         width = 5, height = 3.5, dpi = 600)
 }
 
 # DISTANCES ========================================================================================

@@ -6,7 +6,7 @@ grid_arrange_shared_legend <-
   function(...,
            ncol = length(list(...)),
            nrow = 1,
-           position = c("bottom", "right")) {
+           position = c("bottom", "right", "top")) {
     
     plots <- list(...)
     position <- match.arg(position)
@@ -22,6 +22,12 @@ grid_arrange_shared_legend <-
     
     combined <- switch(
       position,
+      "top" = arrangeGrob(
+        legend,
+        do.call(arrangeGrob, gl),
+        ncol = 1,
+        heights = unit.c(lheight, unit(1, "npc") - lheight)
+      ),
       "bottom" = arrangeGrob(
         do.call(arrangeGrob, gl),
         legend,

@@ -26,7 +26,7 @@ fam_errors.visual <- fam_errors %>%
   droplevels()
 
 # Run models
-run_models <- T
+run_models <- F
 if(run_models){
   ## Run STB model
   fam_errors.visual.lmer <- lmer(error ~ z.block*condition*error_type*salience_ratio +
@@ -44,7 +44,7 @@ if(run_models){
 }
 
 # Plot
-generate_plots <- T
+generate_plots <- F
 if(generate_plots){
   ## Prepare labeller
   error_type_labels <- c(non_salient = "Tail (diagnostic)", salient = "Head (salient)")
